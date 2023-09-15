@@ -1,0 +1,322 @@
+---
+title: "GT-Seq Genotyping Pipeline"
+author: "Aviva Fiske"
+date: "1/7/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Download data from SLIMS via terminal. See SLIMS website for more explanation. The /datalocationcode will be unique to your sequencing files. You can download them to your computer or to the cluster you will work on. Probably good to have the raw data files in multiple locations.
+
+```{unix}
+wget -r -nH -nc -np -R index.html*    http://slims.bioinformatics.ucdavis.edu/Data/datalocationcode
+```
+
+Check md5sum to make sure the files downloaded to your computer/cluster without errors (md5sum on your downloaded files should match the ones on SLIMS).
+
+```{unix}
+md5 filename.fastq.gz
+```
+
+If you downloaded the files from SLIMS to your local computer, upload them to the cluster. From your terminal on your local computer, type: (or you can just download them to the cluster directly from SLIMS)
+
+```{unix}
+scp  /full/file/path/filename.fastq.gz afiske@barbera.genomecenter.ucdavis.edu:/share/schreierlab/aviva_f/foldername
+```
+
+On the cluster, first check md5sum again, then unzip the fastq files. 
+When you're done, the .gz file extension should be gone if it worked correctly.
+
+```{unix}
+srun -t 00:30:00 -c 4 -n 1 --mem 2000 gunzip FILENAME.fastq.gz
+```
+
+If your indexes are already included in the fastq file header, skip the following step. Use the script add_indexSeqs.pl to add your second and third sequencing files (which are the i7 and i5 indexes, respectively) to the header of your main sequencing file. Do this on a computing cluster, as it requires too much memory to be run on a desktop. The output file from this script will use the R1 fastq name and insert an "_indexed" between the name and the file extension. Submit as a batch script as follows:
+
+```{unix}
+#!/bin/bash
+#SBATCH --partition=production
+#SBATCH --job-name=“Add_index” 
+#SBATCH --nodes=1  
+#SBATCH --ntasks=1
+#SBATCH --mem=12G 
+#SBATCH --time=14-1:00:00 
+#SBATCH --output=Add_index.out # File to which STDOUT will be written
+#SBATCH --error=Add_index.err # File to which STDERR will be written
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=afiske@ucdavis.edu
+
+echo "Starting Job: "
+date
+
+add_indexSeqs.pl R1.fastq i7.fastq i5.fastq
+
+
+echo "Ending Job: "
+date
+```
+
+Now all your fastq file headers should include both the i7 and i5 sequences. Check the file to make sure it worked.
+
+```{unix}
+head(file.name)
+```
+
+Use the GTseq_BarcodeSplit_MP.py script to demultiplex your data. Make sure your .csv input has unix line endings, rather than linux line endings. First, check line endings:
+
+```{unix}
+file filename.csv
+```
+
+If it returns "ANSCII text with CRLF line endings", install dos2unix and type:
+```{unix}
+dos2unix filename.csv
+```
+
+Check line endings again, it should return only ANSCII line endings. For some reason I couldn't get dos2unix to run on the cluster, but it worked on my computer. Make sure you specify to run this next command on python3. Once it starts running it will ask you to enter the barcode spliting input file (a .csv, see the script for instructions on how this should be set up. Your i7 and i5 sequences should be 6 bp long) and the fastq file name. Make sure you enter those file names in relation to the directory you're currently located in on the cluster. I ran this script in a new empty folder so that all the individual fastq files would be dumped in their own folder. Run GTseq_BarcodeSplit_MP.py as follows on the cluster:
+
+```{unix}
+srun -t 00:30:00 -c 4 -n 1 --mem 20G python3 GTseq_BarcodeSplit_MP.py
+```
+
+After it runs, check line counts for both the raw fastq file and all of the individual demultiplexed files. The number of reads is that number divided by four. The number of demultiplexed reads should be ~85-95% of the raw reads before demultiplexing. The extra 5-15% are reads without intact barcodes, which is fine. If you have a lot of reads that aren't split into the demultiplexed files, you have a problem.
+
+To check line counts, run this command for a single file...
+```{unix}
+wc -l file.fastq
+```
+...or this on the whole folder of fastq files to count them all at once and add them up.
+```{unix}
+wc -l *.fastq
+```
+
+```{unix}
+head -400000 BMAG064_S207_L005_R1_001_indexed.fastq | grep ’^@‘ | grep -E -o ‘[ACGTN]{6}\+[ACGTN]{6}$’ | sort | uniq -c | sort -g
+```
+
+
+You might need to have String:Approx downloaded on your system. Have it installed, and then run this command to load it:
+```{unix}
+module load perl-libs
+```
+
+
+Now create a shell script from the directory where you have the demultiplexed files.
+
+From the folder where you have the demultiplexed files type:
+```{unix}
+ls *fastq | sed 's/.*/\.\.\/GTseq_Genotyper_v3_Tetra.pl \.\.\/genotyper_input.csv & > &/' | sed 's/fastq$/genos/'
+```
+Make sure the large raw sequencing file isn't in the same directory or it will try to genotype that file as an individual sample.  Also because of the way the sed command works you'll have to escape any "/" or "." in the path to your input file by using a "\"
+before it. Otherwise the sed command will think the "/" is indicating where to delineate what is being replaced with something else. Basically, in the sed command "/" means something different than it usually does, and using "\" before it will make it mean the normal thing again.
+
+For example if your input file is in the parent directory:
+
+```{unix}
+ls *fastq | sed 's/.*/GTseq_Genotyper_v3_Tetra.pl \.\.\/input_ProbeSeqs.csv & > &/' | sed 's/fastq$/genos/'
+```
+
+The previous command will create a long list that looks like this, except with your file names.
+
+```{unix}
+../scripts/GTseq_Genotyper_v3_Tetra.pl ../genotyper_input.csv i001_10_4_18225.fastq > i001_10_4_18225.genos
+../scripts/GTseq_Genotyper_v3_Tetra.pl ../genotyper_input.csv i001_11_4_18226.fastq > i001_11_4_18226.genos
+../scripts/GTseq_Genotyper_v3_Tetra.pl ../genotyper_input.csv i001_12_4_18227.fastq > i001_12_4_18227.genos
+
+```
+Check that everything was made correctly by copying the first line and running the command.  If it runs without error and produces a file with a ".genos" extension that looks right then run it again and push the output to a shell file. Add a "#!/bin/bash" to the top of the shell script created in the below command (genotyper.sh).
+
+```{unix}
+
+ls *fastq | sed 's/.*/GTseq_Genotyper_v3_Tetra.pl \.\.\/input_ProbeSeqs.csv & > &/' | sed 's/fastq$/genos/' > genotyper.sh
+```
+
+Now create a batchscript that looks like this. 
+
+```{unix}
+
+#!/bin/bash
+#SBATCH --partition=production
+#SBATCH --job-name=genotyping
+#SBATCH --nodes=1  
+#SBATCH --ntasks=1
+#SBATCH --mem=15G 
+#SBATCH --time=3:00:00 
+#SBATCH --output=genotyping.out # File to which STDOUT will be written
+#SBATCH --error=genotyping.err # File to which STDERR will be written
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=afiske@ucdavis.edu
+
+echo "Starting Job: "
+date
+
+module load perl-libs
+
+../scripts/genotyper.sh
+
+echo "Ending Job: "
+date
+```
+
+Then just execute genotyper.sh using the batchscript you just made. Run genotyper_batchscript.sh FROM the folder containing the demultiplexed files
+
+```{unix}
+sbatch genotpyer_batchscript.sh
+```
+
+That should produce a .genos output file for each individual fastq file.
+
+
+
+Next, run the compiling script. Make sure to run it FROM the file with the .genos files in it
+
+```{unix}
+srun -t 0:30:00 -c 4 --mem 5G ../scripts/GTseq_GenoCompile_v3_Tetra.pl
+```
+
+Next, make your summary figures to visualize basic data quality.
+
+```{unix}
+srun -t 00:30:00 -c 4 --mem 10G python3 ../scripts/GTseq_SummaryFigures_v3_Tetra.py
+```
+
+
+From here you should be able to work with other programs like Polygene, Colony etc. using the ".genos" genotype files.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+OTHER RANDOM SHIT
+#!/bin/bash
+#SBATCH --partition=production
+#SBATCH --job-name="Add_index"
+#SBATCH --nodes=1  
+#SBATCH --ntasks=1
+#SBATCH --mem=20G 
+#SBATCH --time=14-1:00:00 
+#SBATCH --output=Add_index.out # File to which STDOUT will be written
+#SBATCH --error=Add_index.err # File to which STDERR will be written
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=afiske@ucdavis.edu
+
+echo "Starting Job: "
+date
+
+perl ./add_indexSeqs.pl ./BMAG064_S207_L005_R1_001.fastq ./BMAG064_S207_L005_R2_001.fastq ./BMAG064_S207_L005_$
+
+
+echo "Ending Job: "
+date
+
+
+PATH="/home/afiske/perl5/bin${PATH:+:${PATH}}"; export PATH;
+PERL5LIB="/home/afiske/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export PERL5LIB;
+PERL_LOCAL_LIB_ROOT="/home/afiske/perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"; export PERL_LOCAL_LIB_ROOT;
+PERL_MB_OPT="--install_base \"/home/afiske/perl5\""; export PERL_MB_OPT;
+PERL_MM_OPT="INSTALL_BASE=/home/afiske/perl5"; export PERL_MM_OPT;
+
+
+
+
