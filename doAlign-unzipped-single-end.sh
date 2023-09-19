@@ -31,7 +31,7 @@ do
        reads=\$(samtools view -c ${c2}.sort.bam)
        depth=\$(samtools depth -a ${c2}.sort.bam | awk '{sum+="\$3"} END {print sum/NR}' )
        echo \"${c2},\${reads},\${depth}\"  > ${c2}.stats" > ${c2}.sh
-       sbatch -p med -t 1-10:00:00 --mem=8G ${c2}.sh
+       sbatch -p high -t 1-10:00:00 --mem=8G ${c2}.sh
 
        x=$(( $x + 1 ))
 
