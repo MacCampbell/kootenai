@@ -5,7 +5,7 @@
 
 #Requires a path to indexed reference genome (ref, $2)
 
-#bash ../doAlign-unzipped-single-end.sh files.txt home/maccamp/kootenai/data/new-ref/new-ref.fasta
+#bash ../../doAlign-unzipped-single-end.sh files.txt home/maccamp/kootenai/data/new-ref/new-ref.fasta
 
 list=$1
 ref=$2
@@ -31,7 +31,7 @@ do
        reads=\$(samtools view -c ${c2}.sort.bam)
        depth=\$(samtools depth -a ${c2}.sort.bam | awk '{sum+="\$3"} END {print sum/NR}' )
        echo \"${c2},\${reads},\${depth}\"  > ${c2}.stats" > ${c2}.sh
-       sbatch -p bmm -t 1-10:00:00 --mem=8G ${c2}.sh
+       sbatch -p med -t 1-10:00:00 --mem=8G ${c2}.sh
 
        x=$(( $x + 1 ))
 
