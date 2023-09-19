@@ -1,0 +1,114 @@
+---
+title: "101-make-reference"
+output: html_document
+date: "2023-09-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+I'm going to make a reference to more systematically discover snps.
+
+I can collapse a few individuals with CDHIT
+
+cat ../GT_Seq/AFST01/demultiplexed/04C1_10_S152_L002_R1_001.fastq   ../GT_Seq/AFST01/demultiplexed/0C72_18_S1461_L002_R1_001.fastq ../GT_Seq/AFST01/demultiplexed/1BF277EA5E_S1551_L002_R1_001.fastq ../GT_Seq/AFST01/demultiplexed/7874_6_S98_L002_R1_001.fastq ../GT_Seq/AFST01/demultiplexed/7F7D10322_S1019_L002_R1_001.fastq > combo.fastq
+
+cp ../GT_Seq/AFST01/demultiplexed/7874_6_S98_L002_R1_001.fastq .
+Convert to fasta
+(base) maccamp@farm:~/kootenai/data/new-ref$ seqtk seq -a -q20 -n N combo.fastq > combo.fasta
+915237 sequences 
+87687 sequences in test.fasta
+
+```{sh, eval=FALSE}
+seqtk seq -a -q20 -n N combo.fastq > combo.fasta
+seqtk seq -a -q20 -n N 7874_6_S98_L002_R1_001.fastq > test.fasta
+
+module load cdhit
+module load bbmap
+srun -p high --nodes=1 --mem=32GB -t 2:00:00  cd-hit-est  -i test.fasta -o combined-test.fasta
+
+srun -p high --nodes=1 --mem=32GB -t 2:00:00 bbnorm.sh in=7874_6_S98_L002_R1_001.fastq out=test-normalized.fq target=100 min=5
+
+
+````
+
+Single individual gives 6006 clusters, seems Ns in fastas are a problem 
+
+(base) Macs-MacBook-Pro-2:new-reference mac$ ~/bbmap/bbnorm.sh -Xmx16g in=combo.fastq out=test-normalized.fq target=50 min=5
+
+
+module load velvet    
+
+```{sh, eval=FALSE}
+velveth kmer31 31 -fastq 7874_6_S98_L002_R1_001.fastq 
+velvetg kmer31/ -cov_cutoff 5
+
+velveth kmer21 21 -fastq 7874_6_S98_L002_R1_001.fastq; velvetg kmer21/ -cov_cutoff 5
+
+velveth kmer31 31 -fastq 7874_6_S98_L002_R1_001.fastq; velvetg kmer31/ -cov_cutoff 5
+
+#Normalized file
+velveth kmer21 21 -fastq test-normalized.fq; velvetg kmer21/ -cov_cutoff 3
+velveth kmer27 27 -fastq test-normalized.fq; velvetg kmer27/ -cov_cutoff 3
+velveth kmer29 29 -fastq test-normalized.fq; velvetg kmer29/ -cov_cutoff 3
+
+velveth kmer31 31 -fastq test-normalized.fq; velvetg kmer31/ -cov_cutoff 2
+
+```
+
+Normalization reduces from ~91k reads 
+
+21 produces Final graph has 514 nodes and n50 of 59, max 93, total 13124, using 0/87687 reads
+31 Final graph has 377 nodes and n50 of 71, max 91, total 18579, using 0/30044 reads
+
+
+
+After normalization
+Final graph has 1051 nodes and n50 of 62, max 108, total 26638, using 0/30044 reads
+
+Doesn't really work. I think I need a new reference based on the most common fastqs. Blargh
+awk '{ print ">"$1}'
+ cut -f 6 -d ',' 
+```{sh, eval=FALSE}
+cat ../../data-processing-files/genotyper_input.csv | while read line; do echo ">$line" >> names.txt; done;
+
+cat ../../data-processing-files/genotyper_input.csv |  cut -f 6 -d ',' | while read line; do grep ^$line combo.fasta  | sort | uniq -c | sort -k 1| tail -n 1 | perl -pe 's/^\s+\d+\s+//g' >> seqs.txt ; done;
+
+(base) maccamp@farm:~/kootenai/data/new-ref$ paste -d '\n' names.txt seqs.txt > new-ref.fasta
+
+```
+
+what if there are no hits?
+
+325 names
+325 seqs
+
+
+
+
+
+Seems to work.
+
+Checking.... 
+
+(base) maccamp@farm:~/kootenai/data/new-ref$ cat ../../data-processing-files/genotyper_input.csv |  cut -f 6 -d ',' | while read line; do grep ^$line new-ref.fasta --color >> greps.txt; done;
+wc (base) maccamp@farm:~/kootenai/data/new-ref$ wc -l greps.txt 
+325 greps.txt
+
+(base) maccamp@farm:~/kootenai/data/new-ref$ cat ../../data-processing-files/genotyper_input.csv |  cut -f 6 -d ',' | while read line; do grep $line new-ref.fasta --color; done;
+
+in data/align align demultiplexed files
+
+setting up
+(base) maccamp@farm:~/kootenai/data/align$ ls  | grep fastq > seqs.txt
+
+cat seqs.txt | perl -pe 's/_L\d+.+.fastq//g' > samples.txt
+
+paste seqs.txt samples.txt  > to-align.txt
+
+1648 samples

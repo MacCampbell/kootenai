@@ -14,14 +14,25 @@ Aviva made a really helpful walkthrough document for the GTseq pipeline (GTseqPi
 ## Steps    
 
 _1_ Interrogate data for new SNPs     
-The current analysis looks for existing SNPs by using a perl regex to match known alleles. Looks to be biallelic. 
-`Atr_10304-61,G,A,TGGCTTGGCAGTGG,TGGCTTGACAGTGG,GCCTTTGTTCTCCAGCTTGC,0,0`
-`Locus Name,Allele1,Allele2,ProbeSeq1,ProbeSeq2,FWD_Primer,A1_correction,A2_correction`
+The current analysis looks for existing SNPs by using a perl regex to match known alleles. Looks to be biallelic.      
+`Atr_10304-61,G,A,TGGCTTGGCAGTGG,TGGCTTGACAGTGG,GCCTTTGTTCTCCAGCTTGC,0,0`      
+`Locus Name,Allele1,Allele2,ProbeSeq1,ProbeSeq2,FWD_Primer,A1_correction,A2_correction`       
 TGGCTTGGCAGTGG      
 TGGCTTGACAGTGG      
-`Atr_78173-42,T,C,GGCATTGGAAC[CG]GTC,GGCATCGGAAC[CG]GTC,CTCAGGTCACCCAGCAGAG,0.3,0`    
+`Atr_78173-42,T,C,GGCATTGGAAC[CG]GTC,GGCATCGGAAC[CG]GTC,CTCAGGTCACCCAGCAGAG,0.3,0`     
 
-What is A1_correction/A2_correction? 
+What is A1_correction/A2_correction?     
 
-Can create a reference then align data and see what variants there are in the data. What was the original reference?   
-Can check which loci are invariant, and then look specifically at those to make new variants specific for thse fish.
+Can create a reference then align data and see what variants there are in the data. What was the original reference?    
+Can check which loci are invariant, and then look specifically at those to make new variants specific for thse fish.     
+     
+Getting data like so:    
+`(base) maccamp@farm:~/kootenai/data$ scp -r maccampbell@barbera.genomecenter.ucdavis.edu:/share/schreierlab/aviva_f/GTseq .`     
+
+Looking at some variants like this:     
+`~/kootenai/data/GT_Seq/demultiplexed/Data/4244ddrs2/UnalignedL2/Project_ASAF_L2_AFST01`    
+ `gunzip -c BC13_03_S1366_L002_R1_001.fastq.gz | grep "GCCTTTGTTCTCCAGCTTGC" --color | grep "TGGCTTG\wCAGTGG" --color  `    
+ 
+ 
+ 
+ 

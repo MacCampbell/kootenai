@@ -1,0 +1,124 @@
+---
+title: "100-existing-data"
+output: html_document
+date: "2023-09-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+Need to identify what we have on hand.     
+
+```{r}
+library(tidyverse)
+```
+
+Some samples here:    
+GT_Seq/AFST01/demultiplexed files are analyzed like this:     
+
+../../scripts/GTseq_Genotyper_v3_Tetra.pl ../../input_files/genotyper_input.csv 038C_S786_L002_R1_001.fastq > 038C_S786_L002_R1_001.genos       
+
+8C31_10_S137_L002_R1_001.fastq
+
+
+We have ~751 samples, 744 with genos it look like in GT_Seq/genotypes/genos   
+
+i014_41_2_8C31_10.genos     
+
+i014_41_2_8C31_10.fastq,Raw-Reads:692,On-Target reads:479,%On-Target:69.2,IFI_score:0.00     
+Atr_10304-61,G=3,A=0,30.000,0000,NA,0,0,3,99.7,0.626,Pass,0     
+Atr_10322-43,G=0,A=0,1.000,0000,NA,0,0.3,0,0.0,0.000,Pass,0     
+
+Also have  038C_S786_L002_R1_001.genos in AFST01/genotypes$ 
+
+Two options it looks like, SNPs may be missing data or they may be homs.   
+
+Atr_10304-61,G=177,A=67,2.642,GGGA,HET1,0,0,244,96.1,0.435,Pass,8     
+Atr_10322-43,G=163,A=0,1630.000,GGGG,A1HOM,0,0.3,163,97.6,0.291,Pass,1      
+Atr_10428-71,T=221,A=39,5.667,0000,NA,0,2,521,58.4,0.930,Pass,365     
+Atr_10437-26,T=70,G=56,1.250,TTGG,HET2,0,0,126,94.0,0.225,Pass,7
+Atr_10672-61,C=378,T=0,3780.000,CCCC,A1HOM,0,0,378,88.5,0.675,Pass,10    
+Atr_10867-69,C=204,T=0,2040.000,CCCC,A1HOM,0,0,204,94.0,0.364,Pass,10   
+
+Atr_10322-43,G,A,GCAGCGAAACAAAGA,GCAGCAAAACAAAGA,TGCAGGGGCTATCAGAGACT,0,0.3
+Atr_10672-61,C,T,GACCACACTGGGCAG,GACCATACTGGGCAG,GCAAAATTGGCAGGGATGGT,0,0
+
+Maybe can start by finding homs across the data set and seeing if there are variants specifically there.       
+
+10322 maccampbell@barbera:/share/schreierlab/aviva_f/GT_Seq/AFST01/demultiplexed$ cat 038C_S786_L002_R1_001.fastq | grep TGCAGGGGCTATCAGAGACT | grep --color GCAGC\wAAACAAAGA
+cat 038C_S786_L002_R1_001.fastq | grep GCAAAATTGGCAGGGATGGT | grep --color GACCA\wACTGGGCAG
+
+Still don't know what the samples are and subdirs are.    
+
+There are some negative control files to omit (in subdir neg) and of course the delims arent consistent. 
+
+Combining after removing header line, like so:
+
+ for f in *.genos; do echo $f; cat $f | tail -n +2 >> combined.csv; done;
+```{r, eval=FALSE}
+files<-list.files(path="data/GT_Seq/AFST01/genotypes/", pattern="HCLG*", full.names = TRUE)
+reads<-lapply(files, read_csv, skip=1, col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13"))
+reads<-bind_rows(reads)
+save(reads, file="outputs/100/reads.rda")
+
+files
+```
+
+
+```{r}
+nind<-list.files(path="outputs/100/", pattern="*genos", full.names = TRUE)
+df<-read_csv("outputs/100/combined.csv", col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13"))
+```
+
+Now, we can see if anything mostly has one call in the data set, allowing a bit of variation.
+%>% filter(Count>=length(nind)-(.1*length(nind)))
+
+325 loci
+
+```{r}
+ddf<-df %>% group_by(Locus, Call) %>% summarize(Count=n()) %>% mutate(Total=sum(Count)) 
+ddf
+```
+
+Any loci that are mostly one call?
+
+```{r}
+ddf %>% filter(Count > 558*.75)
+```
+
+Here's a list of mostly invariant or missing data. Let's look at an individual ID12_007_S1357_L002_R1_001.fastq
+Atr_15298-72	
+Atr_15298-72,G,A,TCTCACTGTAT,TCTCACTATAT,TCTCAGCATCTTTCACTACCCA,0,0 
+Looks invariant
+
+Atr_18133-56,G,A,TGGGTTTGTTGTAT,TGGGTTTATTGTAT,AGTCAAGTGTGTGTGTTGGGT,0,0
+Looks invariant
+
+
+
+Atr_28746 has mostly missing data
+    Atr_28746-28,T,A,AGGTTCTTCACTTT,AGGTTCTACACTTT,AGGGGTTGTTGGGCATAAGG,0,0
+    
+There is some polymorphism here, but maybe just too few copies and called as missing.
+
+Mostly missing data here too.
+Atr_32545-55,A,G,ACTCAACACGCCCT,ACTCAACGCGCCCT,TCCACTTGGGATGATCTAATCTCC,0,0
+
+There is polymorphism here, may be NA bc of low number of reads?
+
+Atr_32551-51,G,A,AGGTCGAAGTAGTGG,AGGTCAAAGTAGTGG,GCTCTCCAGGTTGTCGTTGA,0,0
+
+There is polymorphism here, may be NA bc of low number of reads?
+
+Atr_63076-27,T,A,ACAAATTTCATTCA,ACAAATTACATTCA,GCAGGCAACAACAACCTCAC,0,1.2
+
+Present in test sample, polymorphic, but maybe a low number of reads?
+
+
+A couple of q's:
+
+(1) Are A1 HOMs truly invariant?
+(2) Are NA's really just bc of low read counts?
+
+
