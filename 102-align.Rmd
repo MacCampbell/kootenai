@@ -1,0 +1,16 @@
+---
+title: "102-align"
+output: html_document
+date: "2023-09-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+I've aligned the samples and now want to identify variable sites in invariant loci.
+
