@@ -5,7 +5,7 @@
 
 #Requires a path to indexed reference genome (ref, $2)
 
-#bash ../../doAlign-unzipped-single-end.sh files.txt home/maccamp/kootenai/data/new-ref/new-ref.fasta
+#bash ../../doAlign-unzipped-single-end.sh to-align.txt /home/maccamp/kootenai/data/new-ref/new-ref.fasta
 
 list=$1
 ref=$2

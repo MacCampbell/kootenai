@@ -105,10 +105,12 @@ wc (base) maccamp@farm:~/kootenai/data/new-ref$ wc -l greps.txt
 in data/align align demultiplexed files
 
 setting up
-(base) maccamp@farm:~/kootenai/data/align$ ls  | grep fastq > seqs.txt
+(base) maccamp@farm:~/kootenai/data/align$ ls  | grep fastq  | perl -pe 's/.fastq//g'> seqs.txt
 
-cat seqs.txt | perl -pe 's/_L\d+.+.fastq//g' > samples.txt
+cat seqs.txt | perl -pe 's/_L\d+.+R.+//g' > samples.txt
 
 paste seqs.txt samples.txt  > to-align.txt
 
-1648 samples
+1648 samples.  We can look at the stats, exclude low-coverage/neg files and see where the variants are!
+
+
