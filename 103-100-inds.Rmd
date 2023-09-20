@@ -35,7 +35,9 @@ or in my case
 test<-read_tsv("meta/test100.csv")
 test<-test %>% mutate(Fastq=paste0("data/align/",Sample,"_L002_R1_001.fastq")) %>%
   mutate(Command=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", " 103.1-genotyper-in.csv ",
-         Fastq, " > ", "outputs/103/",Sample,".genos"))
+         Fastq, " > ", "outputs/103/",Sample,".genos")) %>%
+   mutate(Command2=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", " data-processing-files/genotyper_input.csv ",
+         Fastq, " > ", "outputs/103/",Sample,".org"))
 test
 ```
 
@@ -55,35 +57,75 @@ But, skipping the interpreter (/usr/bin/perl) works
 
 
 perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl 103.1-genotyper-in.csv data/align/5D58_3_S160_L002_R1_001.fastq > outputs/103/5D58_3_S160.genos
-cata/align/5D58_3_S160_L002_R1_001.fastq,Raw-Reads:141406,On-Target reads:1634,%On-Target:1.2,IFI_score:9.24
-Atr_30916-30,T=160,C=28,5.714,0000,NA,0,0     ,188,97.9,11.506,Pass,3
-Atr_30916-62,G=0,A=0,1.000,0000,NA,0,0     ,0,0.0,0.000,Pass,0
-Atr_39023-30,G=171,A=10,17.100,0000,NA,0,0    ,181,93.8,11.077,Pass,9
-Atr_39023-56,C=0,T=0,1.000,0000,NA,0,0     ,0,0.0,0.000,Pass,0
-Atr_39071-37,G=108,A=26,4.154,GGGA,HET1,0,0     ,134,93.7,8.201,Pass,5
-Atr_39071-73,G=0,A=0,1.000,0000,NA,0,0     ,0,0.0,0.000,Pass,0
-Atr_45890-42,A=75,C=95,0.789,AACC,HET2,1.6,0 ,284,35.1,17.381,Pass,53
+
+
+(base) maccamp@farm:~/kootenai$ cat outputs/103/5D58_3_S160.genos
+data/align/5D58_3_S160_L002_R1_001.fastq,Raw-Reads:141406,On-Target reads:1634,%On-Target:1.2,IFI_score:9.24
+Atr_30916-30,T=160,C=28,5.714,0000,NA,0,0,188,97.9,11.506,Pass,3
+Atr_30916-62,G=0,A=0,1.000,0000,NA,0,0,0,0.0,0.000,Pass,0
+Atr_39023-30,G=171,A=10,17.100,0000,NA,0,0,181,93.8,11.077,Pass,9
+Atr_39023-56,C=0,T=0,1.000,0000,NA,0,0,0,0.0,0.000,Pass,0
+Atr_39071-37,G=108,A=26,4.154,GGGA,HET1,0,0,134,93.7,8.201,Pass,5
+Atr_39071-73,G=0,A=0,1.000,0000,NA,0,0,0,0.0,0.000,Pass,0
+Atr_45890-42,A=75,C=95,0.789,AACC,HET2,1.6,0,284,35.1,17.381,Pass,53
 Atr_45890-59,G=0,T=0,1.000,0000,NA,1.6,0,0,0.0,0.000,Pass,0
-Atr_46229-48,G=59,A=182,0.324,GAAA,HET3,0,0       ,241,97.2,14.749,Pass,3
-Atr_46229-66,G=0,A=0,1.000,0000,NA,0,0    ,0,0.0,0.000,Pass,0
-Atr_54038-28,A=91,G=1,91.000,AAAA,A1HOM,0,0     ,92,52.0,5.630,Pass,16
-Atr_54038-48,A=0,G=0,1.000,0000,NA,0,0      ,0,0.0,0.000,Pass,0
-Atr_75140-52,C=61,T=22,2.773,CCCT,HET1,0,0     ,83,100.0,5.080,Pass,0
-Atr_75140-58,C=0,T=0,1.000,0000,NA,0,0      ,0,0.0,0.000,Pass,0
+Atr_46229-48,G=59,A=182,0.324,GAAA,HET3,0,0,241,97.2,14.749,Pass,3
+Atr_46229-66,G=0,A=0,1.000,0000,NA,0,0,0,0.0,0.000,Pass,0
+Atr_54038-28,A=91,G=1,91.000,AAAA,A1HOM,0,0,92,52.0,5.630,Pass,16
+Atr_54038-48,A=0,G=0,1.000,0000,NA,0,0,0,0.0,0.000,Pass,0
+Atr_75140-52,C=61,T=22,2.773,CCCT,HET1,0,0,83,100.0,5.080,Pass,0
+Atr_75140-58,C=0,T=0,1.000,0000,NA,0,0,0,0.0,0.000,Pass,0
 Atr_76571-21,C=104,A=327,0.318,CAAA,HET3,0,0,431,72.0,26.377,Pass,6
-Atr_76571-26,C=0,A=0,1.000,0000,NA,0,0       ,0,0.0,0.000,Pass,0
+Atr_76571-26,C=0,A=0,1.000,0000,NA,0,0,0,0.0,0.000,Pass,0
 
-perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl data-processing-files/genotyper_input.csv data/align/5D58_3_S160_L002_R1_001.fastq > outputs/103/5D58_3_S160-org.genos
+Seems to work!
 
-base) maccamp@farm:~/kootenai$ grep Atr_30916-62 outputs/103/5D58_3_S160-org.genos 
+But the calls, I had are:
+(base) maccamp@farm:~/kootenai/data/GT_Seq/AFST01/genotypes$ grep Atr_30916-62 5D58_3_S160_L002_R1_001.genos 
 Atr_30916-62,G=182,A=0,1820.000,GGGG,A1HOM,0,0,182,94.8,0.386,Pass,9
 
-Seems fine.  
+From Peter     
+Atr_30916-62,G,A,GACTGGGGCTATTT,GACTGGGACTATTT,AGGTCGTGCTGTATTGGTCA,0,0
+Atr_30916-62,G,A,GACTGGGGCTATTT,GACTGGGACTATTT,AGGTCGTGCTGTATTGGTCA,0,0
 
-perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl data-processing-files/genotyper_input-mac.csv data/align/5D58_3_S160_L002_R1_001.fastq > outputs/103/5D58_3_S160-alt.genos
+k, that looks identical. 
+
+Let's get all the inds.
+
+```{r}
+test %>% select(Command) %>% write_tsv("103.2-commands.sh", col_names = FALSE)
+test %>% select(Command2) %>% write_tsv("103.3-org-commands.sh", col_names = FALSE)
+
+```
+
+module load parallel    
+(base) maccamp@farm:~/kootenai$ srun -p high -t 1:00:00 --nodes=1 --mem=32GB parallel -j 10 < 103.2-commands.sh     
+srun -p high -t 1:00:00 --nodes=1 --mem=32GB parallel -j 10 < 103.3-org-commands.sh     
+
+ for f in *.genos; do echo $f; cat $f | tail -n +2 >> 100-combined.csv; done;
+
+```{r}
+genos<-read_csv("outputs/103/100-combined.csv",
+                col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13"))
+```
+
+```{r}
+loci<-read_tsv("outputs/103/loci.tsv")
+```
+
+```{r}
+merge<-left_join(genos, loci)
+merge2<-merge %>% group_by(Locus, State, Call) %>% summarize(Count=n()) %>% mutate(Total=sum(Count)) 
+```
 
 
+```{r}
+ggplot(merge2) + geom_col(aes(x=Locus, y=Count, fill=Call)) +
+  facet_wrap(.~State, ncol=1) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1)) +
+  theme(panel.grid = element_blank()) +
+  scale_fill_viridis_d(option="H", na.value = "grey")
 
-
-Atr_30916-62,G=182,A=0,1820.000,GGGG,A1HOM,0,0,182,94.8,0.386,Pass,9
-
+ggsave("outputs/103/test-loci-100inds.jpeg")
+```
