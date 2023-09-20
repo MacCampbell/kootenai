@@ -14,3 +14,301 @@ library(tidyverse)
 
 I've aligned the samples and now want to identify variable sites in invariant loci.
 
+```{r}
+stats<-read_csv("outputs/102/alignment-info.txt", col_names=c("Sample","Reads","Coverage"))
+```
+
+
+
+```{r}
+stats %>% summarize(MedianReads=median(Reads), MedianCoverage=median(Coverage))
+```
+
+Get stats of reads/coverage
+```{r}
+ggplot(stats) + geom_histogram(aes(x=Reads)) +
+  theme_bw() +
+  ylab("Count")
+
+ggplot(stats) + geom_histogram(aes(x=Coverage)) +
+  theme_bw() +
+  ylab("Count")
+
+```
+
+If we have 325 loci, like we do, and we want 200 reads a locus
+
+```{r}
+325*200
+```
+
+```{r}
+sub<-filter(stats, Reads > (325*200))
+sub
+```
+
+
+## Are invariant loci variable somehow?
+
+Get genos /home/maccamp/kootenai/data/GT_Seq/AFST01/genotypes in data/AFTO1-genotypes
+
+rm neg*
+rm empty*
+
+Removing header line 
+ for f in ../../data/AFT01-genotypes/*.genos; do echo $f; cat $f | tail -n +2 >> combined.csv; done;
+
+
+
+Chrom names complete so need to match.
+```{r}
+seqs<-read_tsv("new-ref/seq-names.txt", col_names = c("Seq")) %>% 
+  separate(Seq, sep = ",", into=c("Locus", "Major", "Minor", "Regex1", "Regex2", "Primer", "Corr1","Corr2"), remove = FALSE)
+
+seqs
+```
+
+```{r}
+nind<-list.files(path="data/AFT01-genotypes/", pattern="*genos", full.names = TRUE)
+df<-read_csv("outputs/102/combined.csv", col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13"))
+ddf<-df %>% group_by(Locus, Call) %>% summarize(Count=n()) %>% mutate(Total=sum(Count)) 
+ddf
+```
+
+Any loci that are mostly one call?
+
+```{r}
+ddf %>% filter(Count > 1630*.75)
+invariant<-ddf %>% filter(Count > 1630*.75)
+invariant %>% select(Locus) %>% left_join(seqs) %>% ungroup() %>% select(Seq) %>% write_tsv(file= "meta/test-loci.tsv", col_names = FALSE)
+```
+Happen to be no calls or homs
+
+```{r}
+homs<-ddf %>% filter(Count > 1630*.75) %>% filter(Call=="A1HOM")
+
+homs %>% select(Locus) %>% write_tsv(file= "meta/invariant-loci.tsv", col_names = FALSE)
+```
+
+```{r}
+homs
+```
+
+Sixteen invariant loci. 
+
+Make a bamlist
+```{r}
+bams<-sub %>% mutate(Path=paste0("/home/maccamp/kootenai/data/align/",Sample,".sort.bam"))
+bams %>% select(Path) %>% write_tsv("bamlists/aft01.bamlist", col_names = FALSE)
+```
+
+Max coverage setting in ANGSD by default isn't used. 
+
+```{sh, eval=FALSE}
+srun -t 3:00:00 -p high --mem=32G --nodes=1 --ntasks-per-node=1 --cpus-per-task=12 $HOME/angsd/angsd -nthreads 24 \
+-bam bamlists/aft01.bamlist -minInd 1422 -rf meta/test-loci.tsv \
+-out $HOME/kootenai/outputs/102/snps-90  \
+-minMaf 0.10 -minMapQ 20 -minQ 20 -GL 1 -doMajorMinor 1 -doMaf 1 -SNP_pval 1e-6 \
+-doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/102/snps-90.out 2> outputs/102/snps-90.err &
+```
+
+
+Where are there variants?
+
+```{r}
+genos<-read_tsv("outputs/102/snps-90.geno.gz", col_names = FALSE) %>% select(X1, X2) %>% 
+  separate(X1, sep=",", into=c("Locus", "Major", "Minor", "Regex1", "Regex2", "Primer", "Corr1","Corr2"))
+genos
+```
+```{r}
+testloci<-ddf %>% filter(Locus %in% genos$Locus)
+testloci
+```
+
+Convert to vcf and get MAFS
+
+```{sh, eval=FALSE}
+plink --tped snps-90.tped --tfam snps-90.tfam --out snps-90.binary --recode --allow-extra-chr --noweb
+plink --ped snps-90.binary.ped --map snps-90.binary.map --recode vcf --allow-extra-chr -out snps
+bcftools +fill-tags snps-clean.vcf -- -t MAF  > snps-clean-maf.vcf
+```
+
+(base) Macs-MacBook-Pro-2:102 mac$ cat snps-clean-maf.vcf  | grep -v "#" | cut -f 1-8      
+Atr_30916-62	30	Atr_30916-62_30	T	C	.	.	PR;MAF=0.178355     
+Atr_30916-62	48	Atr_30916-62_48	T	A	.	.	PR;MAF=0.172814     
+Atr_38591-73	27	Atr_38591-73_27	A	T	.	.	PR;MAF=0.493758    
+Atr_38591-73	67	Atr_38591-73_67	A	G	.	.	PR;MAF=0.498366    
+Atr_39023-56	23	Atr_39023-56_23	G	A	.	.	PR;MAF=0.17576    
+Atr_39023-56	30	Atr_39023-56_30	G	A	.	.	PR;MAF=0.243643     
+Atr_39071-73	37	Atr_39071-73_37	G	A	.	.	PR;MAF=0.355191    
+Atr_39071-73	41	Atr_39071-73_41	C	T	.	.	PR;MAF=0.348829    
+Atr_39071-73	43	Atr_39071-73_43	C	T	.	.	PR;MAF=0.352195    
+Atr_45890-59	32	Atr_45890-59_32	G	C	.	.	PR;MAF=0.499034    
+Atr_45890-59	34	Atr_45890-59_34	G	A	.	.	PR;MAF=0.488845    
+Atr_45890-59	42	Atr_45890-59_42	A	C	.	.	PR;MAF=0.493827    
+Atr_45890-59	50	Atr_45890-59_50	G	A	.	.	PR;MAF=0.493795    
+Atr_45890-59	51	Atr_45890-59_51	G	A	.	.	PR;MAF=0.494129     
+Atr_46229-66	48	Atr_46229-66_48	C	A	.	.	PR;MAF=0.296907    
+Atr_54038-48	28	Atr_54038-48_28	A	G	.	.	PR;MAF=0.144957    
+Atr_75140-58	52	Atr_75140-58_52	C	T	.	.	PR;MAF=0.359558    
+Atr_76571-26	21	Atr_76571-26_21	C	A	.	.	PR;MAF=0.444556     
+
+Atr_38591-73	we expect a bunch of hets, and we find them! Position 67.... Is this the same as position 73? No, we are identifying position 27 in the reference (used regex to check), also matches variant call.
+
+# Atr_30916-62
+
+```{r}
+ddf %>% filter(Locus=="Atr_30916-62")
+```
+
+Primarily A1HOM, but some variation.  
+
+We have variants at site 30, 48   
+
+```{r}
+genos %>% filter(Locus=="Atr_30916-62")
+```
+Only one test sample has one match to Regex2.     
+
+We have variants    
+Atr_30916-62	30	Atr_30916-62_30	T	C	.	.	PR;MAF=0.178355        
+Atr_30916-62	48	Atr_30916-62_48	T	A	.	.	PR;MAF=0.172814        
+
+Similar freqs, so pick one +- 6 bp AGCTCC[T/C]GTAAGG   
+Atr_30916-30 T C
+AGCTCCTGTAAGG   
+AGCTCCCGTAAGG   
+
+
+# Atr_39023-56    
+
+
+```{r}
+ddf %>% filter(Locus=="Atr_39023-56")
+```
+
+Primarily A1HOM, but some variation.  
+
+We have variants at site  23, 30 
+
+```{r}
+genos %>% filter(Locus=="Atr_39023-56")
+```
+
+
+Atr_39023-56	23	Atr_39023-56_23	G	A	.	.	PR;MAF=0.17576    
+Atr_39023-56	30	Atr_39023-56_30	G	A	.	.	PR;MAF=0.243643     
+
+Looking at site 30 Atr_39023-56	30
+
+TGACAC[A/G]GAGAGG
+TGACACGGAGAGG
+TGACACAGAGAGG
+
+
+# Atr_39071-73
+
+```{r}
+ddf %>% filter(Locus=="Atr_39071-73")
+```
+
+Primarily A1HOM, but some variation.  
+
+```{r}
+genos %>% filter(Locus=="Atr_39071-73")
+```
+Postions 37,41, and 43...
+Atr_39071-73	37	Atr_39071-73_37	G	A	.	.	PR;MAF=0.355191    
+Atr_39071-73	41	Atr_39071-73_41	C	T	.	.	PR;MAF=0.348829    
+Atr_39071-73	43	Atr_39071-73_43	C	T	.	.	PR;MAF=0.352195    
+
+
+Presumably these are tightly linked, I think that there is some regex mismatch.  CTTCACAGAC matches,  CTTCACAAAA does not, but we would no expect it to
+CTTCACAGAC
+
+CTTCACA[G/A]ACT[C/T]C[C/TC
+CTTCACAGACTCCCC
+CTTCACAAACTTCTC
+
+Will return a lot of hits.
+
+We can also use only the first site,and I think this may make sense to do.
+
+CTTCACA[G/A]ACT
+
+CTTCACAGACT
+CTTCACAAACT
+
+
+# Atr_45890-59 
+
+```{r}
+ddf %>% filter(Locus=="Atr_45890-59")
+```
+
+Primarily A1HOM, but some variation.  
+
+```{r}
+genos %>% filter(Locus=="Atr_45890-59")
+```
+
+
+Atr_45890-59	32	Atr_45890-59_32	G	C	.	.	PR;MAF=0.499034    
+Atr_45890-59	34	Atr_45890-59_34	G	A	.	.	PR;MAF=0.488845    
+Atr_45890-59	42	Atr_45890-59_42	A	C	.	.	PR;MAF=0.493827    
+Atr_45890-59	50	Atr_45890-59_50	G	A	.	.	PR;MAF=0.493795    
+Atr_45890-59	51	Atr_45890-59_51	G	A	.	.	PR;MAF=0.494129     
+
+not picking up the minor T allele, only the G, which looks to not have a lot of variation. Also some indels 
+
+TAAGGGCTGCAGTGGTGAAG           32                   50
+TAAGGGCTGCAGTGGTGAAGGCTGTGTACAGGCGTGAGGAGACCTGTCTGGTCGGAATCAGCACAGGTACCGTGGAGATCGGAAGAGCACACGTCTGAACT
+TAAGGGCTGCAGTGGTGAAGGCTGCGTACAGCTGTGAGGAGACCTGTCTGGTCAGAATCAGCACAGGTACCGTGGAGATCGGAAGAGCACACGTCTGAACT
+TAAGGGCTGCAGTGGTGAAGGCTGCATACAGCTGTGAGGAGACTTGTCTGGTCAGAATCAGCACAGGTACCGTGGAGATCGAAAGAGCACACGTCTGAACT
+
+
+There are also a lot of off target amplicons  
+Is what I want
+
+TAAGGGCTGC AGTGGTGAAG GCTGTGTACA GGCGTGAGGA GACCTGTCT GGTCGGAATCAGCACAGGTACCGTGGAGATCGGAAGAGCACACGTCTGAACT
+
+
+ grep TAAGGGCTGCAGTGGTGAAGGCTGTGTACA combo.fasta --color shows a lot of snps close together.  Going for site 42
+ 
+AGGAG[A/C]CCTGTC
+AGGAGACCTGTC
+AGGAGCCCTGTC
+
+In my test data 
+(base) maccamp@farm:~/kootenai/data/new-ref$ grep TAAGGGCTGCAGTGGTGAAG combo.fasta  --color | grep AGGAGACCTGTC | wc 
+   1419    1419  144738
+(base) maccamp@farm:~/kootenai/data/new-ref$ grep TAAGGGCTGCAGTGGTGAAG combo.fasta  --color | grep AGGAGCCCTGTC | wc 
+    711     711   72522
+
+Could be an option. 
+
+
+# Atr_46229-66
+
+
+```{r}
+ddf %>% filter(Locus=="Atr_46229-66")
+```
+
+Primarily A1HOM, but some variation.  
+
+```{r}
+genos %>% filter(Locus=="Atr_46229-66")
+```
+
+Atr_46229-66	48	Atr_46229-66_48	C	A	.	.	PR;MAF=0.296907    
+
+Site 48 looks variable in data
+AAGATGG[C/A]GTCCCT
+AAGATGGCGTCCCT
+AAGATGGAGTCCCT
+
+(base) maccamp@farm:~/kootenai/data/new-ref$ grep AGTGACAGGGAATTGTATGCCT combo.fasta  --color | grep AAGATGGCGTCCCT | wc -l
+1325
+(base) maccamp@farm:~/kootenai/data/new-ref$ grep AGTGACAGGGAATTGTATGCCT combo.fasta  --color | grep AAGATGGAGTCCCT | wc -l
+54
