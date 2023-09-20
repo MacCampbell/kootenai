@@ -88,7 +88,9 @@ From Peter
 Atr_30916-62,G,A,GACTGGGGCTATTT,GACTGGGACTATTT,AGGTCGTGCTGTATTGGTCA,0,0
 Atr_30916-62,G,A,GACTGGGGCTATTT,GACTGGGACTATTT,AGGTCGTGCTGTATTGGTCA,0,0
 
-k, that looks identical. 
+k, that looks identical.  Maybe we can't resample reads? running two different commands to get genos
+
+
 
 Let's get all the inds.
 
@@ -99,7 +101,8 @@ test %>% select(Command2) %>% write_tsv("103.3-org-commands.sh", col_names = FAL
 ```
 
 module load parallel    
-(base) maccamp@farm:~/kootenai$ srun -p high -t 1:00:00 --nodes=1 --mem=32GB parallel -j 10 < 103.2-commands.sh     
+(base) maccamp@farm:~/kootenai$ 
+srun -p high -t 1:00:00 --nodes=1 --mem=32GB parallel -j 12 < 103.2-commands.sh     
 srun -p high -t 1:00:00 --nodes=1 --mem=32GB parallel -j 10 < 103.3-org-commands.sh     
 
  for f in *.genos; do echo $f; cat $f | tail -n +2 >> 100-combined.csv; done;
