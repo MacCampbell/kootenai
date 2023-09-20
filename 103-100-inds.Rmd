@@ -103,6 +103,7 @@ module load parallel
 srun -p high -t 1:00:00 --nodes=1 --mem=32GB parallel -j 10 < 103.3-org-commands.sh     
 
  for f in *.genos; do echo $f; cat $f | tail -n +2 >> 100-combined.csv; done;
+ for f in *.org; do echo $f; cat $f | tail -n +2 >> 100-org-combined.csv; done;
 
 ```{r}
 genos<-read_csv("outputs/103/100-combined.csv",
