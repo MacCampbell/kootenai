@@ -1,0 +1,33 @@
+---
+title: "103-100-inds"
+output: html_document
+date: "2023-09-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+stats<-read_csv("outputs/102/alignment-info.txt", col_names=c("Sample","Reads","Coverage"))
+sub<-filter(stats, Reads > (325*200))
+```
+
+
+```{r,eval=FALSE}
+test<-sub %>% slice_sample(n=100)
+write_tsv(test, file="meta/test100.csv")
+```
+
+```{r}
+test<-read_tsv("meta/test100.csv")
+test<-test %>% mutate(Fastq=paste0("data/align/",Sample,"_L002_R1_001.fastq"))
+test
+```
+
+
+Now we need a f

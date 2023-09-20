@@ -110,6 +110,12 @@ srun -t 3:00:00 -p high --mem=32G --nodes=1 --ntasks-per-node=1 --cpus-per-task=
 -out $HOME/kootenai/outputs/102/snps-90  \
 -minMaf 0.10 -minMapQ 20 -minQ 20 -GL 1 -doMajorMinor 1 -doMaf 1 -SNP_pval 1e-6 \
 -doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/102/snps-90.out 2> outputs/102/snps-90.err &
+
+srun -t 12:00:00 -p bigmemh --mem=128G --nodes=1 --ntasks-per-node=1 --cpus-per-task=12 $HOME/angsd/angsd -nthreads 24 \
+-bam bamlists/aft01.bamlist -minInd 1422 \
+-out $HOME/kootenai/outputs/102/snps-90-all-seqs  \
+-minMaf 0.10 -minMapQ 20 -minQ 20 -GL 1 -doMajorMinor 1 -doMaf 1 -SNP_pval 1e-6 \
+-doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/102/snps-90-all-seqs.out 2> outputs/102/snps-90-all-seqs.err &
 ```
 
 
