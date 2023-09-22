@@ -57,7 +57,7 @@ Atr_40110-57,G,A,TAGGGCCGCATGCA,TAGGGCCACATGCA,GCACTGTGCCACTGACATAT,0,0	21
 Would expect Atr_54160-70 to be a poor performer. Let's investigate more.
 
 ```{r}
-mismatches<-filter(orgs, Locus %in% c("Atr_54160-70","Atr_64006-52","Atr_70167-40"))
+mismatches<-filter(orgs, Locus %in% c("Atr_54160-70","Atr_64006-52","Atr_70167-40","Atr_48754-60"))
 ```
 
 ```{r}
@@ -74,4 +74,42 @@ ggplot(summary) + geom_col(aes(x=Locus, y=Count, fill=Call)) +
   scale_fill_viridis_d(option="H", na.value = "grey")
 ```
 
-Atr_70167-40 has a lot of missing data
+Atr_70167-40 has a lot of missing data.
+
+I wonder if I can use (C|T) or whatever in the primer string.  That is site tweleve would be:
+
+GCATGCATCAGATAGCCAGC
+
+GCATGCATCAG(A|T)TAGCCAGC
+
+(base) maccamp@farm:~/kootenai/data/new-ref$ grep GCATGCATCAG --color test.fasta shows a polymorphic site in the primer.
+
+Atr_48754-60 has a lot of missing data 
+
+GCTTTCTCCTTTCAGTGGCC
+GCTTTCTCCTTTC(A|T)GTGGCC
+
+Something to try!   
+
+Let's clean up our genotype file and get MAFs. Maybe the header is messing things up? let's try to clean up the naming in original ref and call snps again.
+/home/maccamp/kootenai/data/align-new-ref-clean
+/home/maccamp/kootenai/new-ref/new-ref-short-names.fasta
+
+```{sh, eval=FALSE}
+srun -t 12:00:00 -p bigmemh --mem=128G --nodes=1 --ntasks-per-node=1 --cpus-per-task=12 $HOME/angsd/angsd -nthreads 24 \
+-bam bamlists/aft01-clean.bamlist -minInd 1422 \
+-out $HOME/kootenai/outputs/103/snps-90-all-seqs  \
+-minMaf 0.10 -minMapQ 20 -minQ 20 -GL 1 -doMajorMinor 1 -doMaf 1 -SNP_pval 1e-6 \
+-doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/103/snps-90-all-seqs.out 2> outputs/103/snps-90-all-seqs.err &
+
+
+plink --tped snps-90-all-seqs.tped --tfam snps-90-all-seqs.tfam --out snps-90-all-seqs.binary --recode --allow-extra-chr --noweb
+plink --ped snps-90-all-seqs.binary.ped --map snps-90-all-seqs.binary.map --recode vcf --allow-extra-chr -out snps-90-all-seqs
+
+bcftools +fill-tags snps-90-all-seqs.vcf -- -t MAF  > snps-90-all-seqs-maf.vcf
+
+```
+
+
+
+
