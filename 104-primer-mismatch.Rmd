@@ -1,0 +1,77 @@
+---
+title: "104-primer-mismatch"
+output: html_document
+date: "2023-09-22"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+This is a placeholder to investigate mismatches with the primer sequence leading to low input data.
+
+```{r}
+orgs<-read_csv("outputs/103/100-org-combined.csv",
+                col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13"))
+orgs
+```
+
+
+KT10_JV_01_S1514_L002_R1_001.fastq,Raw-Reads:59582,On-Target reads:10173,%On-Target:17.1,IFI_score:1.76
+
+What may have a primer mismatch....
+
+Need to identify variable sites in first 20 bp of seqs. That shoud be easy.
+
+We have 405 common variable sites.  
+ gunzip -c snps-90-all-seqs.geno.gz | wc
+    405  640710 1950545
+
+(base) maccamp@farm:~/kootenai/outputs/102$ gunzip -c snps-90-all-seqs.geno.gz | cut -f 1-2 | sort -n -k 2 | head -n 20
+Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0	9
+Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	9
+Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0	12
+Atr_48754-60,G,A,CTGCAACGACGTGT,CTGCAACAACGTGT,GCTTTCTCCTTTCAGTGGCC,0,0	14
+Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	14
+Atr_1720-33,C,A,GGGGGCTTTGAGAGC,GGGGGATTTGAGAGC,GGCAAAGCAGAAGGGGG,0,0.7	18
+Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0	18
+Atr_29086-33,C,T,TTGTCAACGGGTTT,TTGTCAATGGGTTT,GGTTTGGTTCAACCGCACAG,0,0	19
+Atr_58434-42,G,A,CCAGTCCGTTTTCC,CCAGTCCATTTTCC,GCAGAACCACGCCAGTCC,0,1.5	19
+Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0	19
+Atr_18334-74,A,G,ATGGTGGAC,ATGGTGGGC,GGAAGTTGGTCCTCAGAGGC,0,0	20
+Atr_23070-31,C,A,CAGTCTCCGCATTT,CAGTCTCAGCATTT,GCCTTTGCCCTCCAGTCTC,0,0	20
+Atr_36485-28,C,T,CCTCATCCTAGCCC,CCTCATCTTAGCCC,GGTGCTAGCAGCCCTCATC,0,0	20
+Atr_60368-72,A,T,AGGAACCAGCA,AGGAACCTGCA,CGATGGCCTCCAAGGAACC,0,0	20
+Atr_10428-71,T,A,AGAGAGCTAGCA,AGAGAGCAAGCA,CGCACACACACAAAGAGAGC,0,2	21
+Atr_11864-68,T,C,ATATCGCTGACCAC,ATATCGCCGACCAC,GGTACCACCGCCAATATCGC,0,0	21
+Atr_14917-56,C,T,AACACATCTTAACA,AACACATTTTAACA,TGCGCCACCTAGAAACACAT,0,0	21
+Atr_18295-67,T,C,ACCTGCATGGCAAA,ACCTGCACGGCAAA,CTCGTCTTGAGGCACCTGC,0,0	21
+Atr_30271-58,G,A,AGGAGTCGTATTTC,AGGAGTCATATTTC,ATGCAGAATCCACAGGAGTC,0,0	21
+Atr_40110-57,G,A,TAGGGCCGCATGCA,TAGGGCCACATGCA,GCACTGTGCCACTGACATAT,0,0	21
+
+Would expect Atr_54160-70 to be a poor performer. Let's investigate more.
+
+```{r}
+mismatches<-filter(orgs, Locus %in% c("Atr_54160-70","Atr_64006-52","Atr_70167-40"))
+```
+
+```{r}
+summary<-mismatches %>% group_by(Locus, Call) %>% summarize(Count=n())
+summary
+```
+
+NAs aren't counted, so something like this:
+```{r}
+ggplot(summary) + geom_col(aes(x=Locus, y=Count, fill=Call)) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1)) +
+  theme(panel.grid = element_blank()) +
+  scale_fill_viridis_d(option="H", na.value = "grey")
+```
+
+Atr_70167-40 has a lot of missing data

@@ -111,6 +111,10 @@ srun -p high -t 1:00:00 --nodes=1 --mem=32GB parallel -j 10 < 103.3-org-commands
 ```{r}
 genos<-read_csv("outputs/103/100-combined.csv",
                 col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13"))
+orgs<-read_csv("outputs/103/100-org-combined.csv",
+                col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13"))
+
+genos<-bind_rows(genos,orgs)
 ```
 
 ```{r}
@@ -118,7 +122,7 @@ loci<-read_tsv("outputs/103/loci.tsv")
 ```
 
 ```{r}
-merge<-left_join(genos, loci)
+merge<-left_join(genos, loci) %>% filter(State %in% c("Original","Edited"))
 merge2<-merge %>% group_by(Locus, State, Call) %>% summarize(Count=n()) %>% mutate(Total=sum(Count)) 
 ```
 
@@ -133,3 +137,48 @@ ggplot(merge2) + geom_col(aes(x=Locus, y=Count, fill=Call)) +
 
 ggsave("outputs/103/test-loci-100inds.jpeg")
 ```
+
+
+## What are some other loci to consider?
+```{r}
+candidates<-orgs %>% left_join(loci) %>% group_by(Locus, Genotype, State) %>% summarize(Count=n()) 
+c2<-candidates %>% filter(Count>75) %>% filter(!State %in% c("Unmodified","Original")) 
+
+c3 <- candidates %>% filter(Locus %in% c2$Locus) %>% arrange(Locus, -Count)
+c3
+```
+
+Probably a pattern like this, homozygote with a high proportion of missing is worth looking at (though this one is probably invariant)
+
+Atr_19783-57	CCCC	NA	63	
+Atr_19783-57	0000	NA	30	
+Atr_19783-57	CCCA	NA	6	
+Atr_19783-57	CCAA	NA	1	
+
+This one has a high proportion of missing ata, and is probably invariant.
+
+Atr_28746-28	0000	NA	80	
+Atr_28746-28	TAAA	NA	5	
+Atr_28746-28	TTAA	NA	5	
+Atr_28746-28	TTTA	NA	5	
+
+
+Atr_10322-43 two snps
+Atr_28746-28 (no snps)
+Atr_32545-55 (no snps)	
+Atr_32551-51 (no snps)
+Atr_35415-62 (no snps)
+Atr_38278-50 a SNP 24-CA
+Atr_38591-73 (mostly AT)
+Atr_65843-52 (mostly GT)
+Atr_74987-50 (invariant)
+Atr_10867-69	(invariant)
+Atr_19783 (invariant)
+
+Can make new loci from:
+
+Atr_10322-43 C/T
+Atr_38278-50 C/A
+Atr_10428-71 A/T
+Atr_14862-38 T/C
+Atr_15294-66 T/A
