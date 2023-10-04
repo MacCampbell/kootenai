@@ -88,6 +88,8 @@ Happen to be no calls or homs
 homs<-ddf %>% filter(Count > 1630*.75) %>% filter(Call=="A1HOM")
 
 homs %>% select(Locus) %>% write_tsv(file= "meta/invariant-loci.tsv", col_names = FALSE)
+
+
 ```
 
 ```{r}

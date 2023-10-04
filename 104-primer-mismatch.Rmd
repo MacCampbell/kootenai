@@ -79,8 +79,12 @@ Atr_70167-40 has a lot of missing data.
 I wonder if I can use (C|T) or whatever in the primer string.  That is site tweleve would be:
 
 GCATGCATCAGATAGCCAGC
+GCATGCATCAG(A|T)TAGCCAGC # doesn't work
+GCATGCATCAG # doesn't work
+`GCATGCATCAG\wTAGCCAGC` doesn't work
+GCATGCATCAG.TAGCCAGC
+        $F_Primer{$info[0]} = substr $info[5], 0, 14; $ this seems to say it takes the first 15 characters of the F_Primer
 
-GCATGCATCAG(A|T)TAGCCAGC
 
 (base) maccamp@farm:~/kootenai/data/new-ref$ grep GCATGCATCAG --color test.fasta shows a polymorphic site in the primer.
 
@@ -95,12 +99,14 @@ Let's clean up our genotype file and get MAFs. Maybe the header is messing thing
 /home/maccamp/kootenai/data/align-new-ref-clean
 /home/maccamp/kootenai/new-ref/new-ref-short-names.fasta
 
+Missing an alignment, redoing, now calling. 
+
 ```{sh, eval=FALSE}
 srun -t 12:00:00 -p bigmemh --mem=128G --nodes=1 --ntasks-per-node=1 --cpus-per-task=12 $HOME/angsd/angsd -nthreads 24 \
 -bam bamlists/aft01-clean.bamlist -minInd 1422 \
--out $HOME/kootenai/outputs/103/snps-90-all-seqs  \
+-out $HOME/kootenai/outputs/104/snps-90-all-seqs  \
 -minMaf 0.10 -minMapQ 20 -minQ 20 -GL 1 -doMajorMinor 1 -doMaf 1 -SNP_pval 1e-6 \
--doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/103/snps-90-all-seqs.out 2> outputs/103/snps-90-all-seqs.err &
+-doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/104/snps-90-all-seqs.out 2> outputs/104/snps-90-all-seqs.err &
 
 
 plink --tped snps-90-all-seqs.tped --tfam snps-90-all-seqs.tfam --out snps-90-all-seqs.binary --recode --allow-extra-chr --noweb
@@ -113,3 +119,114 @@ bcftools +fill-tags snps-90-all-seqs.vcf -- -t MAF  > snps-90-all-seqs-maf.vcf
 
 
 
+I could regex in a new primer seq for all fastqs...
+
+Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0	9
+
+Expect sites 9 (G/T) and 18 (G/A) to be polymorphic. Not seeing T/C polymorphism in this seq called, but they are in the fastq. Shrug emoji.   
+
+TTTGCGGTTCAGATGTGGGT
+TTTGCGGTTCAGATGTGGGT CACACAGATCGGAAGAGCACACGTCTGAACTCCAGTCACGGCTACATCTCGTATGCCGTCTTCTGCTTGAAAAAAAAAAAN
+TTTGCGGTGCAGATGTGAGT CACACAGATCGGAAGAGCACACGTCTGAACTCCAGTCACGGCTACATCTCGTATGCCGTCTTCTGCTTGAAAAAAAAAAAA
+
+
+ grep "^TTTGCGGTTCAGATGTGGGT" 3A21_7_S84_L002_R1_001.fastq | wc -l
+7597
+(base) maccamp@farm:~/kootenai/outputs/104$ grep "^TTTGCGGTGCAGATGTGAGT" 3A21_7_S84_L002_R1_001.fastq | wc -l
+6868
+
+(base) maccamp@farm:~/kootenai/outputs/104$ grep "^TTTGCGGT" 3A21_7_S84_L002_R1_001.fastq | wc -l
+14728
+
+7597+6868
+
+Pretty darn close.
+Are these linked smps? So something like perl -pi -e 's/^TTTGCGGTGCAGATGTGAGT/TTTGCGGTTCAGATGTGGGT/
+Let's try a trial individual:
+
+
+(base) maccamp@farm:~/kootenai/outputs/104$ cp ../../data/align/3A21_7_S84_L002_R1_001.fastq .
+
+perl -pi -e 's/^TTTGCGGTGCAGATGTGAGT/TTTGCGGTTCAGATGTGGGT/' 3A21_7_S84_L002_R1_001.fastq
+
+(base) maccamp@farm:~/kootenai/outputs/104$ grep "^TTTGCGGTTCAGATGTGGGT" 3A21_7_S84_L002_R1_001.fastq | wc -l
+14465
+
+  perl -pi -e 's/^TTTGCGGT[G|T]CAGATGTG[A|G]GT/TTTGCGGTTCAGATGTGGGT/' 3A21_7_S84_L002_R1_001.fastq
+  
+  grep "^TTTGCGGTTCAGATGTGGGT"  3A21_7_S84_L002_R1_001.fastq | wc -l
+  14539
+
+
+grep "^TTTGCGGTGCAGATGTGAGT" 3A21_7_S84_L002_R1_001.fastq | wc -l
+0
+
+--
+Atr_64006-52
+
+positions 9/14 polymorphic
+
+grep ^CTGGATGGGGAGCGGTTTAC 3A21_7_S84_L002_R1_001.fastq  | wc -l
+2055
+grep ^CTGGATGGAGAGCAGTTTAC 3A21_7_S84_L002_R1_001.fastq  | wc -l
+743
+
+
+perl -pi -e 's/^CTGGATGG[A|G]GAGC[A|G]GTTTAC/CTGGATGGGGAGCGGTTTAC/' 3A21_7_S84_L002_R1_001.fastq
+(base) maccamp@farm:~/kootenai/outputs/104$ grep ^CTGGATGGGGAGCGGTTTAC 3A21_7_S84_L002_R1_001.fastq  | wc -l
+2880
+
+--
+Atr_70167-40,
+sites 12/19 polymorphic
+
+GCATGCATCAGATAGCCAAC
+GCATGCATCAGATAGCCAGC
+GCATGCATCAGTTAGCCACC
+ TAGCCA[A|G|C]C
+       GCATGCATCAGATAGCCAGC
+ grep ^GCATGCATCAGATAGCCAGC 3A21_7_S84_L002_R1_001.fastq | wc -l
+431
+
+perl -pi -e 's/^GCATGCATCAG[A|T]TAGCCA[A|G|C]C/GCATGCATCAGATAGCCAGC/' 3A21_7_S84_L002_R1_001.fastq
+
+grep ^GCATGCATCAGATAGCCAGC 3A21_7_S84_L002_R1_001.fastq | wc -l
+1880
+
+--
+Atr_48754-60
+
+GCTTTCTCCTTTCAGTGGCC
+GCTTTCTCCTTTCAGTGGCC
+GCTTTCTCCTTTCTGTGGCC
+
+grep "^GCTTTCTCCTTTCTGTGGCC" 3A21_7_S84_L002_R1_001.fastq | wc -l 
+50
+
+
+
+pi -e 's/^GCTTTCTCCTTTC[A|T]GTGGCC/GCTTTCTCCTTTCAGTGGCC/' 3A21_7_S84_L002_R1_001.fastq
+
+(base) maccamp@farm:~/kootenai/outputs/104$ grep "^GCTTTCTCCTTTCTGTGGCC" 3A21_7_S84_L002_R1_001.fastq | wc -l
+0
+(base) maccamp@farm:~/kootenai/outputs/104$ grep "^GCTTTCTCCTTTCAGTGGCC" 3A21_7_S84_L002_R1_001.fastq | wc -l 
+125
+
+low numbers here     
+
+---      
+Atr_64006-52
+Already did!
+
+## strings
+Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0	9
+Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	9
+Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0	12
+Atr_48754-60,G,A,CTGCAACGACGTGT,CTGCAACAACGTGT,GCTTTCTCCTTTCAGTGGCC,0,0	14
+Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	14
+
+                
+perl -pi -e 's/^TTTGCGGT[G|T]CAGATGTG[A|G]GT/TTTGCGGTTCAGATGTGGGT/' 3A21_7_S84_L002_R1_001.fastq
+perl -pi -e 's/^CTGGATGG[A|G]GAGC[A|G]GTTTAC/CTGGATGGGGAGCGGTTTAC/' 3A21_7_S84_L002_R1_001.fastq
+perl -pi -e 's/^GCATGCATCAG[A|T]TAGCCA[A|G|C]C/GCATGCATCAGATAGCCAGC/' 3A21_7_S84_L002_R1_001.fastq
+perl -pi -e 's/^GCTTTCTCCTTTC[A|T]GTGGCC/GCTTTCTCCTTTCAGTGGCC/' 3A21_7_S84_L002_R1_001.fastq

@@ -1,0 +1,66 @@
+---
+title: "102.1-nas.Rmd"
+output: html_document
+date: "2023-10-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+library(tidyverse)
+setwd("~/github/kootenai/")
+```
+
+Several loci are invariant in terms of missing data. Let's see if they are actually polymorphic.
+
+Atr_28746-28 appears to be invariant in the data set.
+Atr_32545-55	appears to be invariant in the data set.
+Atr_32551-51	appears to be invariant in the data set
+Atr_63076-27	appears to be invariant in the data set
+
+
+```{r,eval=FALSE}
+save(ddf, file="/Users/mac/github/kootenai/outputs/102/ddf.rda")
+```
+
+```{r}
+load("/Users/mac/github/kootenai/outputs/102/ddf.rda")
+```
+Any loci that are mostly one call?
+
+```{r}
+ddf %>% filter(Count > 1630*.6)
+invariant<-ddf %>% filter(Count > 1630*.6)
+```
+
+```{r}
+calls<-ddf %>% filter(Locus %in% invariant$Locus)
+homs<-read_csv("~/github/kootenai/meta/invariant-loci.tsv", col_names = c("Locus"))
+```
+
+```{r}
+calls %>% ungroup() %>% filter(Locus != homs$Locus)
+```
+
+Check to see if these are invariant:
+
+Atr_10322-43 has more polymorphism @ site 56, already changed.
+
+Atr_10428-71	I would expect to have more polymorphism.  Tow mostly polymorphic sites
+
+Atr_10428-71,T,A,AGAGAGCTAGCA,AGAGAGCAAGCA,CGCACACACACAAAGAGAGC
+             AGAGAGCTAGCA
+CGCACACACACAAAGAGAGCTAGCAGCCCTGGCTTCCTGGAGTGTGGAGAGCTCACAGACACTGTGGCTCTGGATCCAGATCGGAAGAGCACACGTCTGAA
+CGCACACACACAAAGAGAGCAAGCAGCCCTGGCTTTCTGGAGTGTGGAGAGCTAACAGACACTGTGGCTCTGGATCCAGATCGGAAGAGCACACGTCTGAA
+             AGAGAGCAAGCA
+
+Site 21 should be showing up with a bit of polymorphism (ame site)
+
+Atr_10867 is invariant 
+
+Some polymorphism here:
+Atr_14862-38,T,C,TTGACTCCCTTTAAG,TTGACCCCCTTTAAG,CGCCTCCCCAGGACTATTTT,0,0
+Atr_19666-61
+
