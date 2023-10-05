@@ -1,0 +1,31 @@
+---
+title: "105-high-maf-sites.Rmd"
+output: html_document
+date: "2023-10-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+What about higher MAF sites?
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+mafs<-read_tsv("outputs/104/mafs.txt", col_names = c("CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO")) %>% separate(INFO, sep=";", into = c("PR","MAF")) %>% select(-QUAL, -FILTER, PR)
+
+mafs$MAF<-gsub("MAF=","",mafs$MAF)
+mafs
+```
+
+Presumably, these SNPs are linked on the same locus and are similarly variable.
+
+```{r}
+mafs %>% group_by(CHROM) %>% mutate(Count=n()) %>% filter(Count > 1)
+```
+
+
+Atr_29414-61 varies a lot in MAF

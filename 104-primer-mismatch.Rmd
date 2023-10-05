@@ -230,3 +230,43 @@ perl -pi -e 's/^TTTGCGGT[G|T]CAGATGTG[A|G]GT/TTTGCGGTTCAGATGTGGGT/' 3A21_7_S84_L
 perl -pi -e 's/^CTGGATGG[A|G]GAGC[A|G]GTTTAC/CTGGATGGGGAGCGGTTTAC/' 3A21_7_S84_L002_R1_001.fastq
 perl -pi -e 's/^GCATGCATCAG[A|T]TAGCCA[A|G|C]C/GCATGCATCAGATAGCCAGC/' 3A21_7_S84_L002_R1_001.fastq
 perl -pi -e 's/^GCTTTCTCCTTTC[A|T]GTGGCC/GCTTTCTCCTTTCAGTGGCC/' 3A21_7_S84_L002_R1_001.fastq
+
+
+Let's get our 100 testers and try this out.
+
+(base) maccamp@farm:~/kootenai/outputs/104/files$ cat ~/kootenai/meta/test100.csv | cut -f 1 | while read line; do cp ../../../data/align/$line.sort.ba* .; done;
+(base) maccamp@farm:~/kootenai/outputs/104/files$ cat ~/kootenai/meta/test100.csv | cut -f 1 | while read line; do cp ../../../data/align/$line*fastq .; done;
+
+Wow, uhmmmm, 
+perl -pi -e 's/^TTTGCGGT[G|T]CAGATGTG[A|G]GT/TTTGCGGTTCAGATGTGGGT/' *.fastq
+perl -pi -e 's/^CTGGATGG[A|G]GAGC[A|G]GTTTAC/CTGGATGGGGAGCGGTTTAC/' *.fastq
+perl -pi -e 's/^GCATGCATCAG[A|T]TAGCCA[A|G|C]C/GCATGCATCAGATAGCCAGC/' *.fastq
+perl -pi -e 's/^GCTTTCTCCTTTC[A|T]GTGGCC/GCTTTCTCCTTTCAGTGGCC/' *.fastq
+
+Running as script with srun.
+
+Generate commands:
+```{r}
+test<-read_tsv("meta/test100.csv")
+test2<-test %>% mutate(Fastq=paste0("outputs/104/files/",Sample,"_L002_R1_001.fastq")) %>%
+  mutate(Command=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", " 104.1-test-loci.csv ",
+         Fastq, " > ", "outputs/104/",Sample,".genos"))  %>%
+  mutate(Command2=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", " 104.1-test-loci.csv ",
+         paste0("data/align/",Sample,"_L002_R1_001.fastq"), " > ", "outputs/104/",Sample,".org"))
+test2
+test2 %>% select(Command) %>% write_tsv("104.2-commands.sh", col_names = FALSE)
+test2 %>% select(Command2) %>% write_tsv("104.3-org-commands.sh", col_names = FALSE)
+
+```
+
+
+Run and combine
+
+module load parallel    
+srun -p high -t 1:00:00 --nodes=1 --mem=32GB parallel -j 12 < 104.2-commands.sh     
+srun -p high -t 1:00:00 --nodes=1 --mem=32GB parallel -j 10 < 104.3-org-commands.sh     
+
+ for f in *.genos; do echo $f; cat $f | tail -n +2 >> 100-combined.csv; done;
+ for f in *.org; do echo $f; cat $f | tail -n +2 >> 100-org-combined.csv; done;
+
+Now we can compare the reads and genotypes across things.
