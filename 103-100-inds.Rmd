@@ -123,12 +123,14 @@ loci<-read_tsv("outputs/103/loci.tsv")
 
 ```{r}
 merge<-left_join(genos, loci) %>% filter(State %in% c("Original","Edited"))
-merge2<-merge %>% group_by(Locus, State, Call) %>% summarize(Count=n()) %>% mutate(Total=sum(Count)) 
+merge2<-merge %>% group_by(Locus, State, Call) %>% summarize(Count=n()) %>% mutate(Total=sum(Count))
+merge3<-merge2
+merge3$Locus<-gsub("-\\d\\d","",merge3$Locus)
 ```
 
 
 ```{r}
-ggplot(merge2) + geom_col(aes(x=Locus, y=Count, fill=Call)) +
+ggplot(merge3) + geom_col(aes(x=Locus, y=Count, fill=Call)) +
   facet_wrap(.~State, ncol=1) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1)) +

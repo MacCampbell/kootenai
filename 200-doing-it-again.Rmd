@@ -1,0 +1,107 @@
+---
+title: "200-doing-it-again"
+output: html_document
+date: "2023-10-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+Aviva provided a set of fish from the Kootenai R., others are from Hell's Canyon reach of the Snake.    
+
+```{r}
+parents<-read_csv("meta/KTOI_broodstock.csv", col_names=c("Sample")) %>% mutate(Type=paste0("broodstock"))
+offspring<-read_csv("meta/KTOI-offspring.csv") %>% mutate(Type=paste0("offspring"))
+ktoi<-bind_rows(parents,offspring) 
+ktoi %>% group_by(Type) %>% summarize(Count=n())
+```
+
+Getting alignment stats
+
+```{r}
+stats<-read_csv("outputs/102/alignment-info.txt", col_names=c("SeqID","Reads","Coverage"))
+stats$Sample<-gsub("_S\\d+$","",stats$SeqID)
+```
+
+2434_2_1 ... 2434_2_5 are unmatched, have 
+24343_2_10_S1450,240592,632.734
+24343_2_6_S1418,243816,652.827
+24343_2_7_S1426,255442,684.319
+24343_2_8_S1434,327937,875.665
+24343_2_9_S1442,292162,781.07
+
+Proceeding
+```{r}
+full<-left_join(ktoi,stats) %>% na.omit()
+```
+
+
+```{r}
+full %>% summarize(MedianReads=median(Reads), MedianCoverage=median(Coverage))
+```
+
+Get stats of reads/coverage
+```{r}
+ggplot(full) + geom_histogram(aes(x=Reads, fill=Type)) +
+  theme_bw() +
+  ylab("Count")
+
+ggplot(full) + geom_histogram(aes(x=Coverage, fill=Type)) +
+  theme_bw() +
+  ylab("Count")
+
+```
+
+If we have 325 loci, like we do, and we want 200 reads a locus
+
+```{r}
+325*200
+```
+
+```{r}
+sub<-filter(full, Reads > (325*200)) 
+sub %>% group_by(Type) %>% summarize(Count=n())
+```
+
+Gives us 921 samples.
+
+Do I want polymorphism from the parents? Polymorphism from the offspring? Both?
+
+Setting up all three for comparison.
+
+```{r}
+bamall<-sub %>% mutate(Path=paste0("/home/maccamp/kootenai/data/align/",SeqID,".sort.bam"))
+bamall %>% select(Path) %>% write_tsv("bamlists/ktoi.bamlist", col_names = FALSE)
+
+bamall %>% filter(Type=="broodstock") %>% select(Path) %>% write_tsv("bamlists/ktoi-b.bamlist", col_names = FALSE)
+bamall %>% filter(Type=="offspring") %>% select(Path) %>% write_tsv("bamlists/ktoi-o.bamlist", col_names = FALSE)
+
+```
+
+```{sh, eval=FALSE}
+srun -t 12:00:00 -p bigmemh --mem=128G --nodes=1 --ntasks-per-node=1 --cpus-per-task=12 $HOME/angsd/angsd -nthreads 24 \
+-bam bamlists/ktoi.bamlist -minInd 829 \
+-out $HOME/kootenai/outputs/200/snps-90-all  \
+-minMaf 0.10 -minMapQ 20 -minQ 20 -GL 1 -doMajorMinor 1 -doMaf 1 -SNP_pval 1e-6 \
+-doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/200/snps-90-all.out 2> outputs/200/snps-90-all.err &
+
+srun -t 12:00:00 -p bigmemh --mem=128G --nodes=1 --ntasks-per-node=1 --cpus-per-task=12 $HOME/angsd/angsd -nthreads 24 \
+-bam bamlists/ktoi-b.bamlist -minInd 311 \
+-out $HOME/kootenai/outputs/200/snps-90-broodstock  \
+-minMaf 0.10 -minMapQ 20 -minQ 20 -GL 1 -doMajorMinor 1 -doMaf 1 -SNP_pval 1e-6 \
+-doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/200/snps-90-broodstock.out 2> outputs/200/snps-90-broodstock.err &
+
+srun -t 12:00:00 -p bigmemh --mem=128G --nodes=1 --ntasks-per-node=1 --cpus-per-task=12 $HOME/angsd/angsd -nthreads 24 \
+-bam bamlists/ktoi-b.bamlist -minInd 518 \
+-out $HOME/kootenai/outputs/200/snps-90-offspring  \
+-minMaf 0.10 -minMapQ 20 -minQ 20 -GL 1 -doMajorMinor 1 -doMaf 1 -SNP_pval 1e-6 \
+-doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/200/snps-90-offspring.out 2> outputs/200/snps-90-offsrpring.err &
+
+```
+
+
