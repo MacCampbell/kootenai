@@ -31,5 +31,35 @@ parents <- parents %>%
 parents %>% select(Command) %>% write_tsv("201.1-broodstock-commands.sh", col_names = FALSE)
 ```
 
+module load parallel    
+srun -p high -t 2:00:00 --nodes=1 --mem=32GB parallel -j 12 < 201.1-broodstock-commands.sh     
+
+Reading in genos
+
+
+```{r}
+readFile<-function(file) {
+  df<-read_csv(file, skip=1, col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13"))
+  m<-read.table(file, nrows = 1) %>% as_tibble() %>% separate(V1, into=c("Seq","Reads","T"), sep=",") %>% 
+    separate(V2, into=c("AlignedReads","Percent","IFI"), sep=",")
+  df<-df %>% bind_cols(m)
+  df$SeqID<-gsub("_L002_R1_001.fastq","",df$Seq)
+  df$Sample<-gsub("_S\\d+$","",df$SeqID)
+  return(df)
+}
 ```
 
+```{r, eval=FALSE}
+files<-list.files(path="outputs/202", pattern="*org", full.names= TRUE)
+targets<-bamall %>% mutate(File=paste0("outputs/202/", Sample,".org"))
+t2<-targets %>% filter(File %in% files) 
+t2 %>% group_by(Type) %>% summarize(Count=n())
+```
+
+
+```{r, eval=FALSE}
+reads<-lapply(t2$File, readFile)
+reads<-plyr::rbind.fill(reads)
+reads<-as_tibble(reads)
+save(reads, file="outputs/202/reads.rda")
+```

@@ -14,6 +14,9 @@ library(tidyverse)
 
 Aviva provided a set of fish from the Kootenai R., others are from Hell's Canyon reach of the Snake.    
 
+Turns out they are not unique!
+329 unique parents   
+
 ```{r}
 parents<-read_csv("meta/KTOI_broodstock.csv", col_names=c("Sample")) %>% mutate(Type=paste0("broodstock"))
 offspring<-read_csv("meta/KTOI-offspring.csv") %>% mutate(Type=paste0("offspring"))
@@ -136,12 +139,6 @@ t2 %>% group_by(Type) %>% summarize(Count=n())
 ```
 Okay, there are 332 with genotype files, 135 broodstock and 197 offspring. ? this function produces
 
-```{r, eval=FALSE}
-reads<-lapply(t2$File, readFile)
-reads<-plyr::rbind.fill(reads)
-reads<-as_tibble(reads)
-save(reads, file="outputs/200/reads.rda")
-```
 
 ```{r}
 load("outputs/200/reads.rda")
