@@ -1,0 +1,35 @@
+---
+title: "201-call-broodstock"
+output: html_document
+date: "2023-10-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+Call genotypes for the parents. Have bamlist;
+
+```{r}
+parents<-read_csv("meta/kootenai-all.csv") %>% filter(Type=="broodstock")
+parents$Sample<-gsub("/home/maccamp/kootenai/data/align/","",parents$Sample)
+parents
+```
+
+346 parents to get some genos
+
+```{r}
+parents <- parents %>% 
+  mutate(Command=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", 
+                         " data-processing-files/genotyper_input.csv ",
+         paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/202/",Sample,".org"))
+
+parents %>% select(Command) %>% write_tsv("201.1-broodstock-commands.sh", col_names = FALSE)
+```
+
+```
+

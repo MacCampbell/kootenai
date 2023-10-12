@@ -77,6 +77,7 @@ Setting up all three for comparison.
 ```{r}
 bamall<-sub %>% mutate(Path=paste0("/home/maccamp/kootenai/data/align/",SeqID,".sort.bam"))
 bamall %>% select(Path) %>% write_tsv("bamlists/ktoi.bamlist", col_names = FALSE)
+write_csv(bamall, file="meta/kootenai-all.csv")
 
 bamall %>% filter(Type=="broodstock") %>% select(Path) %>% write_tsv("bamlists/ktoi-b.bamlist", col_names = FALSE)
 bamall %>% filter(Type=="offspring") %>% select(Path) %>% write_tsv("bamlists/ktoi-o.bamlist", col_names = FALSE)
@@ -97,11 +98,79 @@ srun -t 12:00:00 -p bigmemh --mem=128G --nodes=1 --ntasks-per-node=1 --cpus-per-
 -doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/200/snps-90-broodstock.out 2> outputs/200/snps-90-broodstock.err &
 
 srun -t 12:00:00 -p bigmemh --mem=128G --nodes=1 --ntasks-per-node=1 --cpus-per-task=12 $HOME/angsd/angsd -nthreads 24 \
--bam bamlists/ktoi-b.bamlist -minInd 518 \
+-bam bamlists/ktoi-b.bamlist -minInd 311 \
 -out $HOME/kootenai/outputs/200/snps-90-offspring  \
 -minMaf 0.10 -minMapQ 20 -minQ 20 -GL 1 -doMajorMinor 1 -doMaf 1 -SNP_pval 1e-6 \
--doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/200/snps-90-offspring.out 2> outputs/200/snps-90-offsrpring.err &
+-doGeno 4 -doPost 1 -postCutoff 0.95 -doPlink 2  > outputs/200/snps-90-offspring.out 2> outputs/200/snps-90-offspring.err &
 
 ```
 
 
+## Existing Genotype Data
+
+/Users/mac/github/kootenai/data/AFT01-genotypes
+
+Need to read in, probably skipping first line and then adding filename to column, subbing out to string for individual id.   
+
+
+Previously: 
+ for f in *.genos; do echo $f; cat $f | tail -n +2 >> combined.csv; done;
+ 
+```{r}
+readFile<-function(file) {
+  df<-read_csv(file, skip=1, col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13"))
+  m<-read.table(file, nrows = 1) %>% as_tibble() %>% separate(V1, into=c("Seq","Reads","T"), sep=",") %>% 
+    separate(V2, into=c("AlignedReads","Percent","IFI"), sep=",")
+  df<-df %>% bind_cols(m)
+  df$SeqID<-gsub("_L002_R1_001.fastq","",df$Seq)
+  df$Sample<-gsub("_S\\d+$","",df$SeqID)
+  return(df)
+}
+```
+
+```{r, eval=FALSE}
+files<-list.files(path="data/GT_Seq/AFST01/genotypes", pattern="*genos", full.names= TRUE)
+targets<-bamall %>% mutate(File=paste0("data/GT_Seq/AFST01/genotypes/", SeqID,"_L002_R1_001.genos"))
+t2<-targets %>% filter(File %in% files) 
+t2 %>% group_by(Type) %>% summarize(Count=n())
+```
+Okay, there are 332 with genotype files, 135 broodstock and 197 offspring. ? this function produces
+
+```{r, eval=FALSE}
+reads<-lapply(t2$File, readFile)
+reads<-plyr::rbind.fill(reads)
+reads<-as_tibble(reads)
+save(reads, file="outputs/200/reads.rda")
+```
+
+```{r}
+load("outputs/200/reads.rda")
+```
+
+
+```{r}
+combo<-reads %>% left_join(bamall %>% select(Sample, Type), by=c("Sample"="Sample")) 
+combo %>% select(Sample, Type) %>% unique() %>% group_by(Type) %>% summarize(Count=n())
+```
+
+Down to 119 samples of broodstock somehow.
+
+```{r}
+brood<-combo %>% group_by(Locus,Genotype, Call, Type) %>% filter(Type=="broodstock") %>% summarize(Count=n()) %>% arrange(-Count)
+brood
+brood %>% head(n=20) %>% write_tsv("outputs/200/broodstock.tsv")
+```
+
+Expect 314 things, but have 348.
+```{r}
+combo %>% group_by(Locus,Genotype, Call) %>% summarize(Count=n()) %>% arrange(-Count) 
+```
+
+Let's check these against our new broodstock calls and see what they are. 
+
+These look to be useful to redesign:
+
+
+```{sh}
+cut -f 1 outputs/200/broodstock.tsv | while read line; do grep $line outputs/200/snps-90-broodstock.tped | cut -f 1-2; done;
+```
