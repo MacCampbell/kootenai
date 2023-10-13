@@ -20,7 +20,9 @@ parents$Sample<-gsub("/home/maccamp/kootenai/data/align/","",parents$Sample)
 parents
 ```
 
-346 parents to get some genos
+317
+
+
 
 ```{r}
 parents <- parents %>% 
@@ -33,6 +35,8 @@ parents %>% select(Command) %>% write_tsv("201.1-broodstock-commands.sh", col_na
 
 module load parallel    
 srun -p high -t 2:00:00 --nodes=1 --mem=32GB parallel -j 12 < 201.1-broodstock-commands.sh     
+
+Ended up with 317 genotypes in outputs/202
 
 Reading in genos
 
@@ -50,8 +54,8 @@ readFile<-function(file) {
 ```
 
 ```{r, eval=FALSE}
-files<-list.files(path="outputs/202", pattern="*org", full.names= TRUE)
-targets<-bamall %>% mutate(File=paste0("outputs/202/", Sample,".org"))
+files<-list.files(path="outputs/201", pattern="*org", full.names= TRUE)
+targets<-parents %>% mutate(File=paste0("outputs/201/", Sample,".org"))
 t2<-targets %>% filter(File %in% files) 
 t2 %>% group_by(Type) %>% summarize(Count=n())
 ```
@@ -61,5 +65,135 @@ t2 %>% group_by(Type) %>% summarize(Count=n())
 reads<-lapply(t2$File, readFile)
 reads<-plyr::rbind.fill(reads)
 reads<-as_tibble(reads)
-save(reads, file="outputs/202/reads.rda")
+save(reads, file="outputs/201/reads.rda")
 ```
+
+
+## Get genotypes
+
+```{r}
+load("outputs/201/reads.rda")
+```
+
+```{r}
+combo<-reads %>% left_join(parents %>% select(Sample, Type), by=c("Sample"="Sample")) 
+combo %>% select(Sample, Type) %>% unique() %>% group_by(Type) %>% summarize(Count=n())
+```
+
+
+```{r}
+genos<-combo %>% group_by(Locus, Genotype, Call) %>%  summarize(Count=n()) %>% arrange(-Count)
+
+genos %>% head(n=40)%>% write_tsv("outputs/201/broodstock.tsv")
+
+genos %>% head(n=40) 
+
+```
+
+Of these 40 largely invariant loci, 13 are polymorphic (dropping Atr_6251-29 as HET, 14 in file)
+(base) Macs-MacBook-Pro-2:201 mac$ cut -f 1 broodstock.tsv  | while read line; do grep $line ../200/snps-90-broodstock.tped >> hits.txt; done;
+
+Atr_65359-46,T,C,CATCTTCAATCAG[CT]T,CATCTCCAATCAG[CT]T,GTAGTTCCCCTGCCTTGCAT,0,0
+Atr_39023-56,C,T,AGTGACACGGAGAG,AGTGACATGGAGAG,GGTCCACCTGTCAATAATGGC,0,0
+Atr_45074-45,T,G,GTGCATTTCAGCAG,GTGCATTGCAGCAG,GGAGAAACACACACCAAGCG,0,0
+Atr_46229-66,G,A,TTGCTCCGTACAAA,TTGCTCCATACAAA,AGTGACAGGGAATTGTATGCCT,0,0
+Atr_76418-65,A,T,CCGGCTTATCTGAA,CCGGCTTTTCTGAA,GGTAATGCGTGGGTGGTGTT,0,0
+Atr_30916-62,G,A,GACTGGGGCTATTT,GACTGGGACTATTT,AGGTCGTGCTGTATTGGTCA,0,0
+Atr_10322-43,G,A,GCAGCGAAACAAAGA,GCAGCAAAACAAAGA,TGCAGGGGCTATCAGAGACT,0,0.3
+Atr_45890-59,G,T,GTGAGGAGACCTGT,GTGAGGATACCTGT,TAAGGGCTGCAGTGGTGAAG,1.6,0
+Atr_63076-27,T,A,ACAAATTTCATTCA,ACAAATTACATTCA,GCAGGCAACAACAACCTCAC,0,1.2
+Atr_4677-47,C,G,TCCCGGACCGGGCC,TCCCGGAGCGGGCC,CCTGACACTGGCACTCAACA,0,0
+Atr_39071-73,G,A,CTTCACAGAC,CTTCACAAAA,ATAGCCCAGGTGGATGCATG,0,0
+Atr_43107-50,G,A,ATCTGCTGTAGCAC,ATCTGCTATAGCAC,GGTGTCTGCCTGAGCTCAAT,0,0
+Atr_76571-26,C,A,CGATGTTCACGTGC,CGATGCTAACGTGC,GAGGGTCCGCTAGCGATG,0,0
+
+Including NA Atr_63076
+
+Set up parent broodstock in a sane place, data/broodstock, combing in 201 for a test file
+ cat ../../data/broodstock/1BF26FDD87_S1132_L002_R1_001.fastq  ../../data/broodstock/1C2D44F136_S974_L002_R1_001.fastq  ../../data/broodstock/7F7D3F627C_S1313_L002_R1_001.fastq ../../data/broodstock/127975561A_S1362_L002_R1_001.fastq  > test.fastq
+
+These ones are the ones with potential variants in the primer region:
+(base) Macs-MacBook-Pro-2:201 mac$ gunzip -c ../200/snps-90-broodstock.geno.gz  | cut -f 1,2 | sort -k 2 -n
+Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0	9
+Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	9
+Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0	12
+Atr_48754-60,G,A,CTGCAACGACGTGT,CTGCAACAACGTGT,GCTTTCTCCTTTCAGTGGCC,0,0	14
+Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	14
+Atr_1720-33,C,A,GGGGGCTTTGAGAGC,GGGGGATTTGAGAGC,GGCAAAGCAGAAGGGGG,0,0.7	18
+Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0	18
+Atr_29086-33,C,T,TTGTCAACGGGTTT,TTGTCAATGGGTTT,GGTTTGGTTCAACCGCACAG,0,0	19
+Atr_58434-42,G,A,CCAGTCCGTTTTCC,CCAGTCCATTTTCC,GCAGAACCACGCCAGTCC,0,1.5	19
+Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0	19
+Atr_18334-74,A,G,ATGGTGGAC,ATGGTGGGC,GGAAGTTGGTCCTCAGAGGC,0,0	20
+Atr_23070-31,C,A,CAGTCTCCGCATTT,CAGTCTCAGCATTT,GCCTTTGCCCTCCAGTCTC,0,0	20
+Atr_36485-28,C,T,CCTCATCCTAGCCC,CCTCATCTTAGCCC,GGTGCTAGCAGCCCTCATC,0,0	20
+Atr_60368-72,A,T,AGGAACCAGCA,AGGAACCTGCA,CGATGGCCTCCAAGGAACC,0,0	20
+
+#### REDESIGN #####
+
+_1_     
+Atr_65359-46,T,C,CATCTTCAATCAG[CT]T,CATCTCCAATCAG[CT]T,GTAGTTCCCCTGCCTTGCAT,0,0
+Atr_65359-31,T,C,AATCAGTTGCTGA,AATCAGCTGCTGA,GTAGTTCCCCTGCCTTGCAT,0,0
+
+_2_    
+Sites 23, 30 polymorphic
+Atr_39023-56,C,T,AGTGACACGGAGAG,AGTGACATGGAGAG,GGTCCACCTGTCAATAATGGC,0,0
+Atr_39023-23,A,G,AATGGCAATGACA,AATGGCAGTGACA,GGTCCACCTGTCAATAATGGC,0,0
+
+_3_
+Atr_45074-45,T,G,GTGCATTTCAGCAG,GTGCATTGCAGCAG,GGAGAAACACACACCAAGCG,0,0
+Atr_45074-24,A,G,GCGACAATACATT,GCGACAGTGCATT,GGAGAAACACACACCAAGCG,0,0
+
+_4_   
+Site 48 is what we want   
+Atr_46229-66,G,A,TTGCTCCGTACAAA,TTGCTCCATACAAA,AGTGACAGGGAATTGTATGCCT,0,0
+Atr_46229-48,C,A,GATGGCGTCCCT,GATGGAGTCCCT,AGTGACAGGGAATTGTATGCCT,0,0
+
+_5_ 
+Atr_76418-65,A,T,CCGGCTTATCTGAA,CCGGCTTTTCTGAA,GGTAATGCGTGGGTGGTGTT,0,0
+Atr_76418-42,A,T,CGGCTTATCTGAA,CGGCTTTTTTGAA,GGTAATGCGTGGGTGGTGTT,0,0
+
+_6_   
+Sites 30 TC,48 TA possible
+Atr_30916-62,G,A,GACTGGGGCTATTT,GACTGGGACTATTT,AGGTCGTGCTGTATTGGTCA,0,0
+Atr_30916-30,T,C,AGCTCCTGTAAGG,AGCTCCCGTAAGG,AGGTCGTGCTGTATTGGTCA,0,0
+
+_7_
+Atr_10322-43,G,A,GCAGCGAAACAAAGA,GCAGCAAAACAAAGA,TGCAGGGGCTATCAGAGACT,0,0.3
+Atr_10322-56,C,T,AGATACCTGCTAC,AGATACTTGCTAC,TGCAGGGGCTATCAGAGACT,0,0.3
+
+_8_
+Several sites in this one, original site looks to be invariant  
+Atr_45890-59,G,T,GTGAGGAGACCTGT,GTGAGGATACCTGT,TAAGGGCTGCAGTGGTGAAG,1.6,0
+Atr_45890-32,G,C,TACAGGCGTGAGG,TACAGCCATGAGG,TAAGGGCTGCAGTGGTGAAG,1.6,0
+
+_9_
+This one should work well, just low copy number, so skipping
+Atr_63076-27,T,A,ACAAATTTCATTCA,ACAAATTACATTCA,GCAGGCAACAACAACCTCAC,0,1.2
+
+_10_
+Atr_4677-47,C,G,TCCCGGACCGGGCC,TCCCGGAGCGGGCC,CCTGACACTGGCACTCAACA,0,0
+Atr_4677-49,C,T,GGCCTTCGCAAAC,GGCCTTTGCAAAC,CCTGACACTGGCACTCAACA,0,0
+
+_11_
+Atr_39071-73,G,A,CTTCACAGAC,CTTCACAAAA,ATAGCCCAGGTGGATGCATG,0,0
+Atr_39071-41,G,A,ACTTCACAGACT,ACTTCACAAACT,ATAGCCCAGGTGGATGCATG,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep ATAGCCCAGGTGGATGCATG test.fastq | grep ACTTCACAGACT | wc
+    974     974   99348
+(base) maccamp@farm:~/kootenai/outputs/201$ grep ATAGCCCAGGTGGATGCATG test.fastq | grep ACTTCACAAACT | wc
+    155     155   15810
+(base) maccamp@farm:~/kootenai/outputs/201$ grep ATAGCCCAGGTGGATGCATG test.fastq | grep CTTCACAGAC | wc
+    983     983  100266
+(base) maccamp@farm:~/kootenai/outputs/201$ grep ATAGCCCAGGTGGATGCATG test.fastq | grep CTTCACAAAA | wc
+      0       0       0
+
+_12_
+Atr_43107-50,G,A,ATCTGCTGTAGCAC,ATCTGCTATAGCAC,GGTGTCTGCCTGAGCTCAAT,0,0
+This locus looks pretty darn invariant
+
+_13_ 
+Atr_76571-26,C,A,CGATGTTCACGTGC,CGATGCTAACGTGC,GAGGGTCCGCTAGCGATG,0,0
+Atr_76571-21,C,A,CGATGTTCACGTG,CGATGTTAACGTG,GAGGGTCCGCTAGCGATG,0,0
+
+## Calling new markers
