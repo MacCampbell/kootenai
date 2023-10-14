@@ -1,0 +1,88 @@
+---
+title: "202-primer-region"
+output: html_document
+date: "2023-10-14"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(viridis)
+```
+
+These ones are the ones with potential variants in the primer region:
+(base) Macs-MacBook-Pro-2:201 mac$ gunzip -c ../200/snps-90-broodstock.geno.gz  | cut -f 1,2 | sort -k 2 -n
+Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0	9
+Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	9
+Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0	12
+Atr_48754-60,G,A,CTGCAACGACGTGT,CTGCAACAACGTGT,GCTTTCTCCTTTCAGTGGCC,0,0	14
+Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	14
+Atr_1720-33,C,A,GGGGGCTTTGAGAGC,GGGGGATTTGAGAGC,GGCAAAGCAGAAGGGGG,0,0.7	18
+Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0	18
+Atr_29086-33,C,T,TTGTCAACGGGTTT,TTGTCAATGGGTTT,GGTTTGGTTCAACCGCACAG,0,0	19
+Atr_58434-42,G,A,CCAGTCCGTTTTCC,CCAGTCCATTTTCC,GCAGAACCACGCCAGTCC,0,1.5	19
+Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0	19
+Atr_18334-74,A,G,ATGGTGGAC,ATGGTGGGC,GGAAGTTGGTCCTCAGAGGC,0,0	20
+Atr_23070-31,C,A,CAGTCTCCGCATTT,CAGTCTCAGCATTT,GCCTTTGCCCTCCAGTCTC,0,0	20
+Atr_36485-28,C,T,CCTCATCCTAGCCC,CCTCATCTTAGCCC,GGTGCTAGCAGCCCTCATC,0,0	20
+Atr_60368-72,A,T,AGGAACCAGCA,AGGAACCTGCA,CGATGGCCTCCAAGGAACC,0,0	20
+
+_1_
+
+Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0 9
+Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0	18
+perl -pi -e 's/^TTTGCGGT[G|T]CAGATGTG[A|G]GT/TTTGCGGTTCAGATGTGGGT/' 
+
+
+
+_2_   
+
+Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	9
+Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	14
+perl -pi -e 's/^CTGGATGG[A|G]GAGC[A|G]GTTTAC/CTGGATGGGGAGCGGTTTAC/' *.fastq
+
+_3_ 
+
+Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0	12
+Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0	19
+perl -pi -e 's/^GCATGCATCAG[A|T]TAGCCA[A|G|C]C/GCATGCATCAGATAGCCAGC/' *.fastq
+
+
+_4_
+
+Atr_48754-60,G,A,CTGCAACGACGTGT,CTGCAACAACGTGT,GCTTTCTCCTTTCAGTGGCC,0,0	14
+
+
+perl -pi -e 's/^GCTTTCTCCTTTC[A|T]GTGGCC/GCTTTCTCCTTTCAGTGGCC/' *.fastq
+
+Need to edit a couple and see how it goes.
+```{sh, eval=FALSE}
+cp ../../data/broodstock/1BF26FDD87_S1132_L002_R1_001.fastq  .
+cp ../../data/broodstock/1C2D44F136_S974_L002_R1_001.fastq .
+cp ../../data/broodstock/7F7D3F627C_S1313_L002_R1_001.fastq .
+cp ../../data/broodstock/127975561A_S1362_L002_R1_001.fastq  .
+
+perl -pi -e 's/^TTTGCGGT[G|T]CAGATGTG[A|G]GT/TTTGCGGTTCAGATGTGGGT/' *.fastq
+perl -pi -e 's/^CTGGATGG[A|G]GAGC[A|G]GTTTAC/CTGGATGGGGAGCGGTTTAC/' *.fastq
+perl -pi -e 's/^GCATGCATCAG[A|T]TAGCCA[A|G|C]C/GCATGCATCAGATAGCCAGC/' *.fastq
+perl -pi -e 's/^GCTTTCTCCTTTC[A|T]GTGGCC/GCTTTCTCCTTTCAGTGGCC/' *.fastq
+```
+
+```{r}
+testinds<-c("1BF26FDD87_S1132","1C2D44F136_S974","7F7D3F627C_S1313","127975561A_S1362")
+testtibble<-testinds %>% as_tibble() %>% rename(SeqID=value) %>%
+  mutate(Command1=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", 
+                         " 202.1-primer-loci.csv ",
+         paste0("data/broodstock/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/202/",SeqID,".org")) %>%
+  mutate(Command2=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", 
+                         " 202.1-primer-loci.csv ",
+         paste0("outputs/202/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/202/",SeqID,"edited"))
+
+
+testtibble %>% select(Command1) %>% write_tsv("202.2-primer-commands.sh", col_names = FALSE)
+testtibble %>% select(Command2) %>% write_tsv("202.3-primer-commands.sh", col_names = FALSE)
+
+```

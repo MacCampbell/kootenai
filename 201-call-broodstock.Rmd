@@ -86,7 +86,7 @@ genos<-combo %>% group_by(Locus, Genotype, Call) %>%  summarize(Count=n()) %>% a
 
 genos %>% head(n=40)%>% write_tsv("outputs/201/broodstock.tsv")
 
-genos %>% head(n=40) 
+genos %>% head(n=40)  %>% group_by(Call) %>% summarize(Count=n())
 
 ```
 
@@ -112,22 +112,7 @@ Including NA Atr_63076
 Set up parent broodstock in a sane place, data/broodstock, combing in 201 for a test file
  cat ../../data/broodstock/1BF26FDD87_S1132_L002_R1_001.fastq  ../../data/broodstock/1C2D44F136_S974_L002_R1_001.fastq  ../../data/broodstock/7F7D3F627C_S1313_L002_R1_001.fastq ../../data/broodstock/127975561A_S1362_L002_R1_001.fastq  > test.fastq
 
-These ones are the ones with potential variants in the primer region:
-(base) Macs-MacBook-Pro-2:201 mac$ gunzip -c ../200/snps-90-broodstock.geno.gz  | cut -f 1,2 | sort -k 2 -n
-Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0	9
-Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	9
-Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0	12
-Atr_48754-60,G,A,CTGCAACGACGTGT,CTGCAACAACGTGT,GCTTTCTCCTTTCAGTGGCC,0,0	14
-Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0	14
-Atr_1720-33,C,A,GGGGGCTTTGAGAGC,GGGGGATTTGAGAGC,GGCAAAGCAGAAGGGGG,0,0.7	18
-Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0	18
-Atr_29086-33,C,T,TTGTCAACGGGTTT,TTGTCAATGGGTTT,GGTTTGGTTCAACCGCACAG,0,0	19
-Atr_58434-42,G,A,CCAGTCCGTTTTCC,CCAGTCCATTTTCC,GCAGAACCACGCCAGTCC,0,1.5	19
-Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0	19
-Atr_18334-74,A,G,ATGGTGGAC,ATGGTGGGC,GGAAGTTGGTCCTCAGAGGC,0,0	20
-Atr_23070-31,C,A,CAGTCTCCGCATTT,CAGTCTCAGCATTT,GCCTTTGCCCTCCAGTCTC,0,0	20
-Atr_36485-28,C,T,CCTCATCCTAGCCC,CCTCATCTTAGCCC,GGTGCTAGCAGCCCTCATC,0,0	20
-Atr_60368-72,A,T,AGGAACCAGCA,AGGAACCTGCA,CGATGGCCTCCAAGGAACC,0,0	20
+
 
 #### REDESIGN #####
 
@@ -211,3 +196,39 @@ parents %>%
          paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/202/",Sample,".original"))%>% 
   select(Command2) %>% write_tsv("201.5-broodstock-commands.sh", col_names = FALSE)
 ```
+
+module load parallel    
+srun -p high -t 2:00:00 --nodes=1 --mem=32GB parallel -j 12 < 201.4-broodstock-commands.sh     
+srun -p high -t 2:00:00 --nodes=1 --mem=32GB parallel -j 12 < 201.5-broodstock-commands.sh     
+
+for f in *.edited; do echo $f; cat $f | tail -n +2 >> 201-combined.csv; done;
+for f in *.original; do echo $f; cat $f | tail -n +2 >> 201-org-combined.csv; done;
+
+```{r}
+genos<-read_csv("outputs/201/201-combined.csv",
+                col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13")) %>%
+  mutate(State="Edited")
+orgs<-read_csv("outputs/201/201-org-combined.csv",
+                col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13")) %>%
+  mutate(State="Original")
+
+genotypes<-plyr::rbind.fill(genos,orgs) %>% as_tibble()
+genotypes$Locus<-gsub("-\\d+$","",genotypes$Locus)
+```
+
+
+
+```{r}
+outcomes<-genotypes%>% group_by(Locus, State, Call) %>% summarize(Count=n()) %>% mutate(Total=sum(Count))
+outcomes$Call<-factor(outcomes$Call, levels=c("A1HOM","HET1","HET2","HET3","A2HOM"))
+ggplot(outcomes) + geom_col(aes(x=Locus, y=Count, fill=Call)) +
+  facet_wrap(.~State, ncol=1) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1)) +
+  theme(panel.grid = element_blank()) +
+  scale_fill_viridis_d(option="H", na.value = "grey")
+
+ggsave("outputs/201/broodstock-loci.jpeg")
+```
+
+
