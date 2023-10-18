@@ -1,0 +1,321 @@
+---
+title: "203-multiple snps"
+output: html_document
+date: "2023-10-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+Some loci may have variable sites leading to mismatches. 
+
+Looking for highly polymorphic loci....
+
+   3 Atr_11864-68,T,C,ATATCGCTGACCAC,ATATCGCCGACCAC,GGTACCACCGCCAATATCGC,0,0
+   3 Atr_13476-65,A,T,TTATCAGTATGCAGC,TTATCTGTATGCAGC,CGTTTTCCAGCACCACAGGT,0.3,0
+   3 Atr_18334-74,A,G,ATGGTGGAC,ATGGTGGGC,GGAAGTTGGTCCTCAGAGGC,0,0
+   3 Atr_29086-33,C,T,TTGTCAACGGGTTT,TTGTCAATGGGTTT,GGTTTGGTTCAACCGCACAG,0,0
+   3 Atr_29414-61,C,T,TTCCAACCGGGGAT,TTCCAACTGGGGAT,CAGGGCTGGGGTCTGGA,0,0
+   3 Atr_39071-73,G,A,CTTCACAGAC,CTTCACAAAA,ATAGCCCAGGTGGATGCATG,0,0
+   3 Atr_4677-47,C,G,TCCCGGACCGGGCC,TCCCGGAGCGGGCC,CCTGACACTGGCACTCAACA,0,0
+   3 Atr_48754-60,G,A,CTGCAACGACGTGT,CTGCAACAACGTGT,GCTTTCTCCTTTCAGTGGCC,0,0
+   3 Atr_525-66,G,C,AACAAGAAGCAAAGA,AACAACAAGCAAAGA,TCCAGCATGACCATCTCTGC,0,0
+   3 Atr_61171-66,C,T,GATGTGACTGCACG,GATGTGATTGCACG,CCGACGCTGTAAGTTCTGGA,0,0
+   3 Atr_69217-58,A,G,TCAAAGCACCCGAG,TCAAAGCGCCCGAG,AAGCCCCCTTTCTGCTTCTC,0,0
+   3 Atr_7793-68,C,A,CGGTACTCAAATAA,CGGTACTAAAATAA,TAGGGAAAGGGAGTCAGCCA,0,0
+   3 Atr_9723-56,C,T,ATGCGCAGTCTGTAG,ATGCGTAGTCTGTAG,TGATGGGCCATCTTTCACGG,0,0
+   4 Atr_44473-38,T,C,ACATTGATATCTCA,ACATTGACATCTCA,GCAGGTGGTGGAGCTCATAG,0,2
+   4 Atr_49388-52,G,A,CATGTGTGTCTGTC,CATGTGTATCTGTC,GGGACCCATGTATAAGATGGCC,0,0
+   4 Atr_5019-45,C,T,TCCTGCAGC[TA]TTCCT,TCCTGTAGC[TA]TTCCT,GCACCGCTGAATGCTACATC,0,0.3
+   4 Atr_51999-44,A,G,AATATAATGGGTAAG,AATATGATGGGTAAG,TAGGGTCCCAGGGCAGTTTA,0,0
+   4 Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0
+   4 Atr_59842-43,G,A,GGCGGTTGAACCAG,GGCGGTTAAACCAG,CATCTCTCTTGTGAGGGCGG,0,1.2
+   4 Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0
+   4 Atr_64706-45,T,A,CACTGACTGCTGTA,CACTGACAGCTGTA,TGCAGGGATGGTCCTTGTTG,1.9,0
+   4 Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0
+   4 Atr_70479-48,T,A,CATAGATTGCTTCA,CATAGATAGCTTCA,GTCTGGGAAATGTCTGGGCA,1.8,0
+   5 Atr_13917-71,C,A,AACTACTCATCA,AACTACTAATCA,CCTTCCCAGGGAGCTTGATG,0,0
+   5 Atr_24146-56,A,C,ACATGTTAATCTTG,ACATGTTCATCTTG,TGGCTAAAGATCTAGAACACATGT,0,0
+   5 Atr_28411-65,A,G,GTGCCCAACAGGAC,GTGCCCAGCAGGAC,AAACCAAGCAGCGTCTGGAA,0,0
+   5 Atr_29277-35,C,G,TGAAACAGCAGTATG,TGAAAGAGCAGTATG,GGATCGCTCTCTGCTTGTGA,0,0
+   5 Atr_45890-59,G,T,GTGAGGAGACCTGT,GTGAGGATACCTGT,TAAGGGCTGCAGTGGTGAAG,1.6,0
+   7 Atr_16803-66,C,T,GGCAGCACGCCTCT,GGCAGCATGCCTCT,CATGTTGTGTGTCCGGTGC,0,0
+   7 Atr_57542-29,A,T,CCAGAAAATGGCTC,CCAGAAATTGGCTC,CTGGCCTTTGTCCTCCAGAA,0,0
+   9 Atr_40110-57,G,A,TAGGGCCGCATGCA,TAGGGCCACATGCA,GCACTGTGCCACTGACATAT,0,0
+   
+Wow, so what happened with these guys?
+
+```{sh, eval=FALSE}
+gunzip -c ../200/snps-90-broodstock.geno.gz  | cut -f 1,2 > sites.txt
+```
+
+```{r}
+polys<-read_tsv("outputs/203/sites.txt", col_names = c("Locus","Site")) %>% group_by(Locus) %>%
+  mutate(SNPS=n())
+polys  %>% select(Locus, SNPS) %>% unique() %>% arrange(-SNPS)
+```
+
+
+```{r}
+pl<-polys  %>% select(Locus, SNPS) %>% unique() %>% arrange(-SNPS) %>% filter(SNPS>=4) %>% separate(Locus, sep=",", into = c("Loci","G1","G2","R1","R2","Primer","X1","X2"))
+pl
+```
+
+
+Get genos
+
+```{r}
+load("outputs/201/reads.rda")
+```
+
+```{r}
+combo<-reads %>% left_join(parents %>% select(Sample, Type), by=c("Sample"="Sample")) 
+combo %>% select(Sample, Type) %>% unique() %>% group_by(Type) %>% summarize(Count=n())
+```
+
+```{r}
+combo %>% filter(Locus %in% pl$Loci) %>% group_by(Locus, Genotype, Call) %>% summarize(Count=n())
+```
+
+```{r}
+combo %>% filter(Locus %in% pl$Loci) %>% group_by(Locus, Genotype, Call) %>% summarize(Count=n()) %>%
+  filter(Call=="A2HOM") %>% arrange(-Count)
+```
+
+```{r}
+combo %>% filter(Locus %in% pl$Loci) %>% group_by(Locus, Genotype, Call) %>% summarize(Count=n()) %>% filter(Locus=="Atr_54160-70")
+```
+
+    
+_1_  
+   4 Atr_70479-48,T,A,CATAGATTGCTTCA,CATAGATAGCTTCA,GTCTGGGAAATGTCTGGGCA,1.8,0
+   
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GTCTGGGAAATGTCTGGGCA test.fastq --color | grep CATAGATTGCTTCA | wc
+   3317    3317  338334
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GTCTGGGAAATGTCTGGGCA test.fastq --color | grep CATAGATAGCTTCA | wc
+     46      46    4692
+
+
+Has a lot of missing data, other sites a lot more variable: not to self compute MAFs from vcf.
+Could try something like this:
+Atr_70479-52,G,A,TGGTCAGATGCCT,TGGTCAAATGCCT,GTCTGGGAAATGTCTGGGCA,1.8,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GTCTGGGAAATGTCTGGGCA test.fastq  --color | grep TGGTCAGATGCCT | wc
+   1417    1417  144534
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GTCTGGGAAATGTCTGGGCA test.fastq  --color | grep TGGTCAAATGCCT | wc
+   1959    1959  199818
+
+_2_    4 Atr_70167-40,C,T,CAGACCTCGTCCTG,CAGACCTTGTCCTG,GCATGCATCAGATAGCCAGC,0,0
+
+Mostly NA and A2 HOMS, 12/19 look nicely variable, looks like this is off target amplification. Sigh. not worth messing with. This leads to low counts.
+(base) maccamp@farm:~/kootenai/outputs/201$ cat test.fastq | grep GCATGCATCAGATAGCCA --color  | grep CAGACCTCGTCCTG | wc
+     86      86    8772
+(base) maccamp@farm:~/kootenai/outputs/201$ cat test.fastq | grep GCATGCATCAGATAGCCA --color  | grep CAGACCTTGTCCTG | wc
+    190     190   19380
+
+Could do something like this:
+Atr_00001-40,G,C,AGCCAGCAGCAC,AGCCACCAGCAC,GCATGCATCAGATAGCCAGC,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ cat test.fastq | grep GCATGCATCAGATAGCCA --color   | grep AGCCAGCAGCAC | wc
+   1915    1915  195330
+(base) maccamp@farm:~/kootenai/outputs/201$ cat test.fastq | grep GCATGCATCAGATAGCCA --color   | grep AGCCACCAGCAC | wc
+    119     119   12138
+
+_3_    4 Atr_64706-45,T,A,CACTGACTGCTGTA,CACTGACAGCTGTA,TGCAGGGATGGTCCTTGTTG,1.9,0 (this one should work great, skipping)
+
+
+_4_ Atr_28411-65 looks to be mostly A1 Hom
+   5 Atr_28411-65,A,G,GTGCCCAACAGGAC,GTGCCCAGCAGGAC,AAACCAAGCAGCGTCTGGAA,0,0
+   
+(base) maccamp@farm:~/kootenai/outputs/201$ grep AAACCAAGCAGCGTCTGGAA test.fastq  --color | grep GTGCCCAACAGGAC | wc
+   1538    1538  156876
+(base) maccamp@farm:~/kootenai/outputs/201$ grep AAACCAAGCAGCGTCTGGAA test.fastq  --color | grep GTGCCCAGCAGGAC | wc
+      7       7     714
+
+There are definitely some variable sites screwing with this one, moving to site 58
+Atr_28411-65,T,C,ATGAGTTCCTG,ATGAGTCCCTG,AAACCAAGCAGCGTCTGGAA,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep AAACCAAGCAGCGTCTGGAA test.fastq  --color | grep ATGAGTTCCTG | wc
+   1544    1544  157488
+(base) maccamp@farm:~/kootenai/outputs/201$ grep AAACCAAGCAGCGTCTGGAA test.fastq  --color | grep ATGAGTCCCTG | wc
+   1683    1683  171666
+   
+_5_
+Atr_13917-71
+
+   5 Atr_13917-71,C,A,AACTACTCATCA,AACTACTAATCA,CCTTCCCAGGGAGCTTGATG,0,0
+
+Need to adjust for mutation here in regex,
+                 
+Atr_13917-47,G,C,TTTTGTCTGAA,TTTTCTCTGAA,CCTTCCCAGGGAGCTTGATG,0,0
+
+_6_    4 Atr_59842-43,G,A,GGCGGTTGAACCAG,GGCGGTTAAACCAG,CATCTCTCTTGTGAGGGCGG,0,1.2
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CATCTCTCTTGTGAGGGCGG test.fastq | grep GGCGGTTGAACCAG | wc
+   1172    1172  119544
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CATCTCTCTTGTGAGGGCGG test.fastq | grep GGCGGTTAAACCAG | wc
+    798     798   81396
+    
+
+This site (23) should work well , NA may be low copy number.
+
+_6_ Atr_64706
+                      CACTGACAGCTGTA
+   4 Atr_64706-45,T,A,CACTGACTGCTGTA,CACTGACAGCTGTA,TGCAGGGATGGTCCTTGTTG,1.9,0
+This site should work well , NA may be low copy number.
+
+_7_ Atr_44473-38	
+   4 Atr_44473-38,T,C,ACATTGATATCTCA,ACATTGACATCTCA,GCAGGTGGTGGAGCTCATAG,0,2
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GCAGGTGGTGGAGCTCATAG test.fastq | grep ACATTGATATCTCA | wc
+   1208    1208  123216
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GCAGGTGGTGGAGCTCATAG test.fastq | grep ACATTGACATCTCA | wc
+   1190    1190  121380
+
+Should work well.
+
+_8_    5 Atr_45890-59,G,T,GTGAGGAGACCTGT,GTGAGGATACCTGT,TAAGGGCTGCAGTGGTGAAG,1.6,0
+Don't expect GT polymorphism her, is CA, also AG poly in binding site
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TAAGGGCTGCAGTGGTGAAG test.fastq  --color | grep GTGAGGAGACCTGT | wc
+   1547    1547  157794
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TAAGGGCTGCAGTGGTGAAG test.fastq  --color | grep GTGAGGATACCTGT | wc
+      0       0       0
+(
+
+Atr_45890-42,A,C,GAGGAGACCTGTCT,GAGGAGCCCTGTCT,TAAGGGCTGCAGTGGTGAAG,1.6,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TAAGGGCTGCAGTGGTGAAG test.fastq  --color | grep GAGGAGACCTGTCT | wc
+   1544    1544  157488
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TAAGGGCTGCAGTGGTGAAG test.fastq  --color | grep GAGGAGCCCTGTCT | wc
+    872     872   88944
+
+_9_    4 Atr_64006-52,C,T,GGTTTACCCTGAAG,GGTTTACTCTGAAG,CTGGATGGGGAGCGGTTTAC,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color CTGGATGGGGAGC test.fastq  | grep GGTTTACCCTGAAG | wc
+   1480    1480  150960
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color CTGGATGGGGAGC test.fastq  | grep GGTTTACTCTGAAG | wc
+      5       5     510
+
+Site 14 looks to be a better one to redesign on, GA
+
+Atr_64006-14,G,A,AGCGGTTTACA,AGCAGTTTACA,CTGGATGGGGAGCGGTTTAC,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color CTGGATGGGGAGC test.fastq  | grep  AGCGGTTTACA | wc
+   4413    4413  450126
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color CTGGATGGGGAGC test.fastq  | grep  AGCAGTTTACA | wc
+    157     157   16014
+
+_10_    4 Atr_49388-52,G,A,CATGTGTGTCTGTC,CATGTGTATCTGTC,GGGACCCATGTATAAGATGGCC,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color GGGACCCATGTATAAGATGGCC test.fastq  | grep CATGTGTGTCTGTC | wc -l
+1282
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color GGGACCCATGTATAAGATGGCC test.fastq  | grep CATGTGTATCTGTC | wc -l
+516
+
+Trying site 47
+Atr_49388-47,T,G,ATACCGTGTGAAC,ATACCGGGTGAAC,GGGACCCATGTATAAGATGGCC,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color GGGACCCATGTATAAGATGGCC test.fastq  | grep ATACCGTGTGAAC | wc
+   1797    1797  183294
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color GGGACCCATGTATAAGATGGCC test.fastq  | grep ATACCGGGTGAAC | wc
+    638     638   65076
+    
+_11_ Atr_51999-44,A,G,AATATAATGGGTAAG,AATATGATGGGTAAG,TAGGGTCCCAGGGCAGTTTA,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color TAGGGTCCCAGGGCAGTTTA test.fastq | grep AATATAATGGGTAAG | wc
+    494     494   50388
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color TAGGGTCCCAGGGCAGTTTA test.fastq | grep AATATGATGGGTAAG | wc
+     73      73    7446
+
+Looks to be TA polymorphic    sites 34/35 both poly
+Atr_51999-34,A,G,GAATATAATGGGTA,GAATATGATGGGTAA,TAGGGTCCCAGGGCAGTTTA,0,0, no real improvement here
+
+_12_     5 Atr_29277-35,C,G,TGAAACAGCAGTATG,TGAAAGAGCAGTATG,GGATCGCTCTCTGCTTGTGA,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color GGATCGCTCTCTGCTTGTGA test.fastq  | grep TGAAACAGCAGTATG | wc
+    404     404   41208
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color GGATCGCTCTCTGCTTGTGA test.fastq  | grep TGAAAGAGCAGTATG | wc
+   1084    1084  110568
+
+This regex looks to hit a variable site, adjusting
+Atr_29277-31,C,G,ATGAAACAGCAGT,ATGAAAGAGCAGT,GGATCGCTCTCTGCTTGTGA,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color GGATCGCTCTCTGCTTGTGA test.fastq  | grep ATGAAACAGCAGT | wc
+    406     406   41412
+(base) maccamp@farm:~/kootenai/outputs/201$ grep --color GGATCGCTCTCTGCTTGTGA test.fastq  | grep ATGAAAGAGCAGT | wc
+   2544    2544  259488
+   
+_13_    7 Atr_57542-29,A,T,CCAGAAAATGGCTC,CCAGAAATTGGCTC,CTGGCCTTTGTCCTCCAGAA,0,0
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CTGGCCTTTGTCCTCCAGAA test.fastq | grep CCAGAAATTGGCTC | wc
+   1695    1695  172890
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CTGGCCTTTGTCCTCCAGAA test.fastq | grep CCAGAAAATGGCTC | wc
+    116     116   11832
+Let's see if a linked SNP is ruining everything. Yes indeedy!
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CTGGCCTTTGTCCTCCAGAA test.fastq | grep CCAGAAATTGG | wc
+   1709    1709  174318
+   
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CTGGCCTTTGTCCTCCAGAA test.fastq | grep CCAGAATTTGG | wc
+   1109    1109  113118
+
+Atr_57542-29,A,T,CCAGAAATTGG,CCAGAATTTGG,GGATCGCTCTCTGCTTGTGA,0,0
+
+_14_    5 Atr_24146-56,A,C,ACATGTTAATCTTG,ACATGTTCATCTTG,TGGCTAAAGATCTAGAACACATGT,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TGGCTAAAGATCTAGAACACATGT test.fastq | grep ACATGTTAATCTTG | wc
+    239     239   24378
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TGGCTAAAGATCTAGAACACATGT test.fastq | grep ACATGTTCATCTTG | wc
+   2303    2303  234906
+
+Looks like site 26, with polys at 30 and 33, a variant linked to something 
+
+TGGCTAAAGATCTAGAACACATGTTAATCTTGACTAATTAAGACAATACTTGGTTCCATTAAGCAACAGAGCTCGGTTGAAGATCGGAAGAGCACACGTCT
+TGGCTAAAGATCTAGAACACATGTTAATCGTGGCTAATTAAGCCAATAATTGGTGCAATTAAGCAACAGAGCTCGGTTGAAGATCGGAAGAGCACACGTCT
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TGGCTAAAGATCTAGAACACATGT test.fastq | grep ACATGTTAATC | wc -l
+425
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TGGCTAAAGATCTAGAACACATGT test.fastq | grep ACATGTTCATC | wc -l
+2318
+
+Atr_24146-26,A,C,ACATGTTAATC,ACATGTTCATC,TGGCTAAAGATCTAGAACACATGT,0,0
+Atr_24146-56,A,C,ACATGTTAATCTTG,ACATGTTCATCTTG,TGGCTAAAGATCTAGAACACATGT,0,0
+
+_15_    7 Atr_16803-66,C,T,GGCAGCACGCCTCT,GGCAGCATGCCTCT,CATGTTGTGTGTCCGGTGC,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CATGTTGTGTGTCCGGTGC test.fastq  | grep GGCAGCACGCCTCT --color | wc
+   1082    1082  110364
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CATGTTGTGTGTCCGGTGC test.fastq  | grep GGCAGCATGCCTCT --color | wc
+    555     555   56610
+
+GGCAGCAC[A|G]
+
+GGCAGCACG
+Also some indel poly, skipping!
+
+_16_ Atr_54160-70,T,C,TCATTTTTGGGTC,TCATTTTCGGGTC,TTTGCGGTTCAGATGTGGGT,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TTTGCGGTTCAGATGTGGGT test.fastq | wc
+  16851   16851 1718802
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TTTGCGGTTCAGATGTGGGT test.fastq | grep TCATTTTTGGGTC | wc
+    887     887   90474
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TTTGCGGTTCAGATGTGGGT test.fastq | grep TCATTTTCGGGTC  | wc
+    765     765   78030
+
+Hmmm.... Some cross amplification, but should work ok.
+
+_17_   4 Atr_5019-45,C,T,TCCTGCAGC[TA]TTCCT,TCCTGTAGC[TA]TTCCT,GCACCGCTGAATGCTACATC,0,0.3
+
+Trying site 31 as an alternative
+Atr_5019-31,A,G,TTTCAAATCCTG,TTTCAAGTCCTG,GCACCGCTGAATGCTACATC,0,0.3
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GCACCGCTGAATGCTACATC test.fastq | grep TTTCAAATCCTG  | wc
+   1072    1072  109344
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GCACCGCTGAATGCTACATC test.fastq | grep TTTCAAGTCCTG | wc
+    480     480   48960
+

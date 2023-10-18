@@ -213,6 +213,8 @@ orgs<-read_csv("outputs/201/201-org-combined.csv",
   mutate(State="Original")
 
 genotypes<-plyr::rbind.fill(genos,orgs) %>% as_tibble()
+genotypes$Loci<-genotypes$Locus
+
 genotypes$Locus<-gsub("-\\d+$","",genotypes$Locus)
 ```
 
@@ -226,9 +228,48 @@ ggplot(outcomes) + geom_col(aes(x=Locus, y=Count, fill=Call)) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1)) +
   theme(panel.grid = element_blank()) +
-  scale_fill_viridis_d(option="H", na.value = "grey")
+  scale_fill_viridis_d(option="H", na.value = "grey") +
+  theme(axis.title = element_text(face="bold", size=14)) +
+  xlab("\nLocus") +
+  ylab("Count\n")
 
 ggsave("outputs/201/broodstock-loci.jpeg")
 ```
 
+# Figure the number of reads for each ind, check if same or better
 
+```{r}
+calls<-genotypes %>% select(Locus,Loci, G1,G2,Genotype,Call,State)
+calls$G1<-gsub("\\w=","",calls$G1)
+calls$G2<-gsub("\\w=","",calls$G2)
+calls$G1<-as.numeric(calls$G1)
+calls$G2<-as.numeric(calls$G2)
+calls<-calls %>% mutate(Counts=G1+G2)
+calls2<-calls %>% group_by(Locus, Loci, State) %>% summarize(NReads=sum(Counts)) %>%
+  ungroup() %>%
+  arrange(Locus, State) %>% mutate(NewX=1:n())
+calls2
+```
+
+```{r}
+ggplot(calls2) + 
+  geom_col(aes(x=NewX, y=NReads, fill=State),col="black", width=0.75) +
+  scale_x_continuous(labels = calls2$Loci, breaks = calls2$NewX) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1)) +
+  theme(panel.grid = element_blank()) +
+  ylab("Number of Reads\n") +
+  xlab("\nLocus") +
+  scale_fill_viridis_d(na.value = "grey", option="magma") +
+  theme(axis.title = element_text(face="bold", size=14)) +
+  xlab("\nLocus") +
+  ylab("Count\n")
+
+ggsave("outputs/201/broodstock-loci-counts.jpeg")
+
+```
+
+```{r}
+calls2 %>% group_by(State) %>% summarize(TotalReads=sum(NReads)) %>% mutate(Diff=lag(TotalReads)-TotalReads) %>% mutate(Percent=Diff/TotalReads * 100)
+```
