@@ -22,8 +22,8 @@ Looking for highly polymorphic loci....
    3 Atr_18334-74,A,G,ATGGTGGAC,ATGGTGGGC,GGAAGTTGGTCCTCAGAGGC,0,0
    3 Atr_29086-33,C,T,TTGTCAACGGGTTT,TTGTCAATGGGTTT,GGTTTGGTTCAACCGCACAG,0,0
    3 Atr_29414-61,C,T,TTCCAACCGGGGAT,TTCCAACTGGGGAT,CAGGGCTGGGGTCTGGA,0,0
-   3 Atr_39071-73,G,A,CTTCACAGAC,CTTCACAAAA,ATAGCCCAGGTGGATGCATG,0,0
-   3 Atr_4677-47,C,G,TCCCGGACCGGGCC,TCCCGGAGCGGGCC,CCTGACACTGGCACTCAACA,0,0
+   3 Atr_39071-73,G,A,CTTCACAGAC,CTTCACAAAA,ATAGCCCAGGTGGATGCATG,0,0 # already done
+   3 Atr_4677-47,C,G,TCCCGGACCGGGCC,TCCCGGAGCGGGCC,CCTGACACTGGCACTCAACA,0,0 #already done
    3 Atr_48754-60,G,A,CTGCAACGACGTGT,CTGCAACAACGTGT,GCTTTCTCCTTTCAGTGGCC,0,0
    3 Atr_525-66,G,C,AACAAGAAGCAAAGA,AACAACAAGCAAAGA,TCCAGCATGACCATCTCTGC,0,0
    3 Atr_61171-66,C,T,GATGTGACTGCACG,GATGTGATTGCACG,CCGACGCTGTAAGTTCTGGA,0,0
@@ -319,3 +319,272 @@ Atr_5019-31,A,G,TTTCAAATCCTG,TTTCAAGTCCTG,GCACCGCTGAATGCTACATC,0,0.3
 (base) maccamp@farm:~/kootenai/outputs/201$ grep GCACCGCTGAATGCTACATC test.fastq | grep TTTCAAGTCCTG | wc
     480     480   48960
 
+_18_ Atr_9723-56
+
+   3 Atr_9723-56,C,T,ATGCGCAGTCTGTAG,ATGCGTAGTCTGTAG,TGATGGGCCATCTTTCACGG,0,0
+   
+Hmm, looks to be some variation around the sites 30,32,35, with 35 being the one targetted originally   
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep ^TGATGGGCCATCTTTCACGG test.fastq | grep ATGCGCAGTCTGTAG | wc
+    796     796   81192
+(base) maccamp@farm:~/kootenai/outputs/201$ grep ^TGATGGGCCATCTTTCACGG test.fastq | grep ATGCGTAGTCTGTAG | wc
+    252     252   25704
+Atr_9723-35,C,T,CGCAGTCTGTAGGGT,CGTAGTCTGTAGGGT,TGATGGGCCATCTTTCACGG,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep ^TGATGGGCCATCTTTCACGG test.fastq | grep CGCAGTCTGTAGGGT | wc
+    802     802   81804
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep ^TGATGGGCCATCTTTCACGG test.fastq | grep CGTAGTCTGTAGGGT | wc
+   1250    1250  127500
+
+Hooray!!!
+
+_19_    3 Atr_7793-68,C,A,CGGTACTCAAATAA,CGGTACTAAAATAA,TAGGGAAAGGGAGTCAGCCA,0,0
+
+Sites 35, 46 and 62
+grep ^TAGGGAAAGGGAGTCAGCCA test.fastq  | grep CGGTACTCAAATAA | wc
+    734     734   74868
+    
+ grep ^TAGGGAAAGGGAGTCAGCCA test.fastq  | grep CGGTACTAAAATAA | wc
+0 
+
+Poly in binding site linked to other SNP, snp not vairable in these fish.
+Atr_7793-35,A,G,AGAGTGCAGTAC,AGAGTGCGGTAC,TAGGGAAAGGGAGTCAGCCA,0,0
+(base) maccamp@farm:~/kootenai/outputs/201$ grep ^TAGGGAAAGGGAGTCAGCCA test.fastq  | grep AGAGTGCAGTAC | wc
+    531
+(base) maccamp@farm:~/kootenai/outputs/201$ grep ^TAGGGAAAGGGAGTCAGCCA test.fastq  | grep AGAGTGCGGTAC | wc
+    740     740   75480
+
+_20_    3 Atr_69217-58,A,G,TCAAAGCACCCGAG,TCAAAGCGCCCGAG,AAGCCCCCTTTCTGCTTCTC,0,0
+
+
+Sites 24, 25 29 poly
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep AAGCCCCCTTTCTGCTTCTC test.fastq  --color | grep TCAAAGCACCCGAG | wc
+     74      74    7548
+(base) maccamp@farm:~/kootenai/outputs/201$ grep AAGCCCCCTTTCTGCTTCTC test.fastq  --color | grep TCAAAGCGCCCGAG | wc
+    238     238   24276
+
+Atr_69217-29,C,A,CCCGAGTCACT,CCAGAGTCACT,AAGCCCCCTTTCTGCTTCTC,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep AAGCCCCCTTTCTGCTTCTC test.fastq  --color | grep CCCGAGTCACT | wc
+    311     311   31722
+(base) maccamp@farm:~/kootenai/outputs/201$ grep AAGCCCCCTTTCTGCTTCTC test.fastq  --color | grep CCAGAGTCACT | wc
+    142     142   14484
+
+
+_21_ Atr_61171-66,C,T,GATGTGACTGCACG,GATGTGATTGCACG,CCGACGCTGTAAGTTCTGGA,0,0
+
+sites 26 34 58
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CCGACGCTGTAAGTTCTGGA test.fastq  --color | grep GATGTGACTGCACG | wc
+    682     682   69564
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CCGACGCTGTAAGTTCTGGA test.fastq  --color | grep GATGTGATTGCACG | wc
+    837     837   85374
+
+should work great
+                                         AACAAGAAGCAAAGA  
+_22_    3 Atr_525-66,G,C,AACAAGAAGCAAAGA,AACAACAAGCAAAGA,TCCAGCATGACCATCTCTGC,0,0
+Sites 41, 51, 52 poly GA GA AC
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TCCAGCATGACCATCTCTGC test.fastq | grep AACAAGAAGCAAAGA  | wc
+   1474    1474  150348
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TCCAGCATGACCATCTCTGC test.fastq | grep AACAACAAGCAAAGA  | wc
+    106     106   10812
+
+This site is triallelic, site 51 that is 41 looks a lot easier to deal with.
+
+Atr_525-41,G,A,TGCAGGAGCAAC,TGCAAGAGCAAC,TCCAGCATGACCATCTCTGC,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TCCAGCATGACCATCTCTGC test.fastq | grep TGCAGGAGCAAC | wc
+   1569    1569  160038
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TCCAGCATGACCATCTCTGC test.fastq | grep TGCAAGAGCAAC | wc
+   1313    1313  133926
+
+_23_    3 Atr_48754-60,G,A,CTGCAACGACGTGT,CTGCAACAACGTGT,GCTTTCTCCTTTCAGTGGCC,0,0
+
+Site 14 TA is truly a poly
+base) maccamp@farm:~/kootenai/outputs/201$ grep GCTTTCTCCTTTCAGTGGCC test.fastq  | grep CTGCAACGACGTGT | wc
+    213     213   21726
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GCTTTCTCCTTTCAGTGGCC test.fastq  | grep CTGCAACAACGTGT | wc
+      0       0       0
+
+188, 196
+Atr_48754-14,T,A,CTGTGGCCTTGTGACA,CAGTGGCCTTGTGACA,GCTTTCTCCTTTCAGTGGCC,0,0
+
+_24_    3 Atr_29414-61,C,T,TTCCAACCGGGGAT,TTCCAACTGGGGAT,CAGGGCTGGGGTCTGGA,0,0
+
+45, 59, 61 look poly
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CAGGGCTGGGGTCTGGA test.fastq  | grep TTCCAACCGGGGAT | wc
+    922     922   94044
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CAGGGCTGGGGTCTGGA test.fastq  | grep TTCCAACTGGGGAT | wc
+   1332    1332  135864
+This one looks like it should work well. site 61 does mess with things
+Atr_29414-59,TGGAGTTCCAACCG,TGGAGTTCCAACTG,CAGGGCTGGGGTCTGGA,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CAGGGCTGGGGTCTGGA test.fastq  | grep TGGAGTTCCAACCG | wc
+   1473    1473  150246
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CAGGGCTGGGGTCTGGA test.fastq  | grep TGGAGTTCCAACTG | wc
+   1335    1335  136170
+   
+   
+_25_    3 Atr_29086-33,C,T,TTGTCAACGGGTTT,TTGTCAATGGGTTT,GGTTTGGTTCAACCGCACAG,0,0
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GGTTTGGTTCAACCGCACAG test.fastq | grep TTGTCAACGGGTTT | wc
+    707     707   72114
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GGTTTGGTTCAACCGCACAG test.fastq | grep TTGTCAATGGGTTT | wc
+    480     480   48960
+
+This one is hard to clearly improve upon.
+
+_26_    3 Atr_18334-74,A,G,ATGGTGGAC,ATGGTGGGC,GGAAGTTGGTCCTCAGAGGC,0,0
+This one is hard to clearly improve upon.
+
+_27_    3 Atr_13476-65,A,T,TTATCAGTATGCAGC,TTATCTGTATGCAGC,CGTTTTCCAGCACCACAGGT,0.3,0
+
+Sites 36, 37 41
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CGTTTTCCAGCACCACAGGT test.fastq  | grep TTATCAGTATGCAGC | wc
+   1866    1866  190332
+(base) maccamp@farm:~/kootenai/outputs/201$ grep CGTTTTCCAGCACCACAGGT test.fastq  | grep TTATCTGTATGCAGC | wc
+   1128    1128  115056
+
+Should work pretty well
+                                          ATATCGCTGACCAC
+_28_    3 Atr_11864-68,T,C,ATATCGCTGACCAC,ATATCGCCGACCAC,GGTACCACCGCCAATATCGC,0,0
+
+21,40,45 
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GGTACCACCGCCAATATCGC test.fastq  | grep ATATCGCTGACCAC | wc
+   1326    1326  135252
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GGTACCACCGCCAATATCGC test.fastq  | grep ATATCGCCGACCAC | wc
+    659     659   67218
+This is targeting site 21 (TC) should work great!!
+
+These doubles look close to each other
+Atr_13706-54,A,T,GTGAGAGAAGACTA,GTGAGAGTAGACTA,AGGCTACTTGCATCTGCCAG,0,0	74
+Atr_13706-54,A,T,GTGAGAGAAGACTA,GTGAGAGTAGACTA,AGGCTACTTGCATCTGCCAG,0,0	76
+Atr_14635-67,C,A,GGAGCACCAAAAAC,GGAGCACAAAAAAC,ATCCCCAGCTGATTTGCCTC,0,0.3	58
+Atr_14635-67,C,A,GGAGCACCAAAAAC,GGAGCACAAAAAAC,ATCCCCAGCTGATTTGCCTC,0,0.3	59
+Atr_22727-31,C,T,TTTGCCAGATTTCAG,TTTGCTAGATTTCAG,GCAGGAAACCATGATGCACC,0,0	73
+Atr_22727-31,C,T,TTTGCCAGATTTCAG,TTTGCTAGATTTCAG,GCAGGAAACCATGATGCACC,0,0	75
+Atr_2768-35,C,T,CGCCTGGCCAGTTG,CGCCTGGTCAGTTG,TGCAGGTGTTCAGTTGAGCA,0,0	30
+Atr_2768-35,C,T,CGCCTGGCCAGTTG,CGCCTGGTCAGTTG,TGCAGGTGTTCAGTTGAGCA,0,0	35
+
+Atr_39023-56,C,T,AGTGACACGGAGAG,AGTGACATGGAGAG,GGTCCACCTGTCAATAATGGC,0,0	23
+Atr_39023-56,C,T,AGTGACACGGAGAG,AGTGACATGGAGAG,GGTCCACCTGTCAATAATGGC,0,0	30
+Atr_43107-50,G,A,ATCTGCTGTAGCAC,ATCTGCTATAGCAC,GGTGTCTGCCTGAGCTCAAT,0,0	70
+Atr_43107-50,G,A,ATCTGCTGTAGCAC,ATCTGCTATAGCAC,GGTGTCTGCCTGAGCTCAAT,0,0	72
+Atr_46134-46,T,C,TCCCTGCTGATTTT,TCCCTGCCGATTTT,TGCTTGACCTAGCCAGTAGTG,0.3,0	46
+Atr_46134-46,T,C,TCCCTGCTGATTTT,TCCCTGCCGATTTT,TGCTTGACCTAGCCAGTAGTG,0.3,0	47
+Atr_46247-56,C,T,TAAACCGGGGCTCTG,TAAACTGGGGCTCTG,GTCAGGGACTCGTGGACTTC,0,0	29
+Atr_46247-56,C,T,TAAACCGGGGCTCTG,TAAACTGGGGCTCTG,GTCAGGGACTCGTGGACTTC,0,0	30
+Atr_59201-47,G,A,CAGCAGGGTCCACT,CAGCAGGATCCACC,GCTTGATTTCACTGGGTGCC,0,0	36
+Atr_59201-47,G,A,CAGCAGGGTCCACT,CAGCAGGATCCACC,GCTTGATTTCACTGGGTGCC,0,0	42
+Atr_64217-68,A,G,CCTTAAATTCGAG,CCTTAGATTCGAG,TGTTAACAAGGGAAACGCCG,0,0	30
+Atr_64217-68,A,G,CCTTAAATTCGAG,CCTTAGATTCGAG,TGTTAACAAGGGAAACGCCG,0,0	38
+Atr_68186-72,C,T,ACAGTCCCTGC,ACAGTCCTTGC,TACCAGTCGCCTGACCAGTA,0,0	52
+Atr_68186-72,C,T,ACAGTCCCTGC,ACAGTCCTTGC,TACCAGTCGCCTGACCAGTA,0,0	58
+
+
+_29_                           CGCCTGGCCAGTTG
+Atr_2768-35,C,T,CGCCTGGCCAGTTG,CGCCTGGTCAGTTG,TGCAGGTGTTCAGTTGAGCA,0,0	30
+Atr_2768-35,C,T,CGCCTGGCCAGTTG,CGCCTGGTCAGTTG,TGCAGGTGTTCAGTTGAGCA,0,0	35
+
+Poly here interferse
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TGCAGGTGTTCAGTTGAGCA test.fastq  | grep CGCCTGGCCAGTTG | wc
+    216     216   22032
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TGCAGGTGTTCAGTTGAGCA test.fastq  | grep CGCCTGGTCAGTTG | wc
+    160     160   16320
+
+Atr_2768-34,C,T,CTGGCCAGTTGGG,CTGGTCAGTTGGG,TGCAGGTGTTCAGTTGAGCA,0,0	
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TGCAGGTGTTCAGTTGAGCA test.fastq  | grep CTGGCCAGTTGGG | wc
+    731     731   74562
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TGCAGGTGTTCAGTTGAGCA test.fastq  | grep CTGGTCAGTTGGG | wc
+    162     162   16524
+
+_30_ 
+Atr_39023-56,C,T,AGTGACACGGAGAG,AGTGACATGGAGAG,GGTCCACCTGTCAATAATGGC,0,0	23
+Atr_39023-56,C,T,AGTGACACGGAGAG,AGTGACATGGAGAG,GGTCCACCTGTCAATAATGGC,0,0	30
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GGTCCACCTGTCAATAATGGC test.fastq  | grep AGTGACACGGAGAG | wc
+   1489    1489  151878
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GGTCCACCTGTCAATAATGGC test.fastq  | grep AGTGACATGGAGAG | wc
+     55      55    5610
+
+Leaving this alone
+
+_31_
+Atr_43107-50,G,A,ATCTGCTGTAGCAC,ATCTGCTATAGCAC,GGTGTCTGCCTGAGCTCAAT,0,0	70
+Atr_43107-50,G,A,ATCTGCTGTAGCAC,ATCTGCTATAGCAC,GGTGTCTGCCTGAGCTCAAT,0,0	72
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GGTGTCTGCCTGAGCTCAAT test.fastq  | grep ATCTGCTGTAGCAC | wc
+    733     733   74766
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GGTGTCTGCCTGAGCTCAAT test.fastq  | grep ATCTGCTATAGCAC | wc
+      6       6     612
+
+Not a lot to do here!
+
+_32_ 
+Atr_46134-46,T,C,TCCCTGCTGATTTT,TCCCTGCCGATTTT,TGCTTGACCTAGCCAGTAGTG,0.3,0	46
+Atr_46134-46,T,C,TCCCTGCTGATTTT,TCCCTGCCGATTTT,TGCTTGACCTAGCCAGTAGTG,0.3,0	47
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TGCTTGACCTAGCCAGTAGTG test.fastq | grep TCCCTGCTGATTTT | wc
+    736     736   75072
+(base) maccamp@farm:~/kootenai/outputs/201$ grep TGCTTGACCTAGCCAGTAGTG test.fastq | grep TCCCTGCCGATTTT | wc
+     74      74    7548
+
+_33_ Atr_46247-56,C,T,TAAACCGGGGCTCTG,TAAACTGGGGCTCTG,GTCAGGGACTCGTGGACTTC,0,0	29
+
+29/30 both poly
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GTCAGGGACTCGTGGACTTC test.fastq  | grep TAAACCGGGGCTCTG | wc
+    363     363   37026
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GTCAGGGACTCGTGGACTTC test.fastq  | grep TAAACTGGGGCTCTG | wc
+    510     510   52020
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GTCAGGGACTCGTGGACTTC test.fastq  | grep AAACTGGGGCTCTG | wc
+    513     513   52326
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GTCAGGGACTCGTGGACTTC test.fastq  | grep AAACCAGGGCTCTG | wc
+    313     313   31926
+
+Atr_46247-29,C,T,GGACTTCCTGTAAACT,GGACTTCCTGTAAACCA,GTCAGGGACTCGTGGACTTC,0,0
+GGACTTCCTGTAAACT
+GGACTTCCTGTAAACCA   
+
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GTCAGGGACTCGTGGACTTC test.fastq  | grep GGACTTCCTGTAAACT | wc
+    525     525   53550
+(base) maccamp@farm:~/kootenai/outputs/201$ grep GTCAGGGACTCGTGGACTTC test.fastq  | grep GGACTTCCTGTAAACCA | wc
+    318     318   32436
+    
+NOT changing
+
+_34_ 
+Atr_59201-47,G,A,CAGCAGGGTCCACT,CAGCAGGATCCACC,GCTTGATTTCACTGGGTGCC,0,0	36
+Atr_59201-47,G,A,CAGCAGGGTCCACT,CAGCAGGATCCACC,GCTTGATTTCACTGGGTGCC,0,0	42
+
+Blargh.
+
+
+
+## Get laoded 
+
+```{r}
+parents<-read_csv("meta/kootenai-all.csv") %>% filter(Type=="broodstock")
+parents$Sample<-gsub("/home/maccamp/kootenai/data/align/","",parents$Sample)
+parents
+```
+
+```{r}
+parents %>% 
+  mutate(Command2=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", 
+                         " 203.1-poly-edited.csv ",
+         paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/203/",Sample,".edited"))%>% 
+  select(Command2) %>% write_tsv("203.4-broodstock-commands.sh", col_names = FALSE)
+
+parents %>% 
+  mutate(Command2=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", 
+                         " 203.2-poly-original.csv ",
+         paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/203/",Sample,".original"))%>% 
+  select(Command2) %>% write_tsv("203.5-broodstock-commands.sh", col_names = FALSE)
+```
