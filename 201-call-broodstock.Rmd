@@ -87,6 +87,20 @@ genos<-combo %>% group_by(Locus, Genotype, Call) %>%  summarize(Count=n()) %>% a
 genos %>% head(n=40)%>% write_tsv("outputs/201/broodstock.tsv")
 
 genos %>% head(n=40)  %>% group_by(Call) %>% summarize(Count=n())
+#look at next 20
+genos %>% head(n=60)%>% tail(n=20) %>% write_tsv("outputs/201/broodstock-next20.tsv")
+
+genos %>% head(n=60) %>% tail(n=20)  %>% group_by(Call) %>% summarize(Count=n())
+
+genos %>% head(n=80)%>% tail(n=20) %>% write_tsv("outputs/201/broodstock-next20-next.tsv")
+
+genos %>% head(n=80) %>% tail(n=20)  %>% group_by(Call) %>% summarize(Count=n())
+
+
+genos %>% head(n=100)%>% tail(n=20) %>% write_tsv("outputs/201/broodstock-next20-next-next.tsv")
+
+genos %>% head(n=100) %>% tail(n=20)  %>% group_by(Call) %>% summarize(Count=n())
+
 
 ```
 
