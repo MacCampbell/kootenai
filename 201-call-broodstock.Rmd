@@ -201,13 +201,13 @@ Atr_76571-21,C,A,CGATGTTCACGTG,CGATGTTAACGTG,GAGGGTCCGCTAGCGATG,0,0
 parents %>% 
   mutate(Command2=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", 
                          " 201.2-broodstock.csv ",
-         paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/202/",Sample,".edited"))%>% 
+         paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/201/",Sample,".edited"))%>% 
   select(Command2) %>% write_tsv("201.4-broodstock-commands.sh", col_names = FALSE)
 
 parents %>% 
   mutate(Command2=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", 
                          " 201.3-org.csv ",
-         paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/202/",Sample,".original"))%>% 
+         paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/201/",Sample,".original"))%>% 
   select(Command2) %>% write_tsv("201.5-broodstock-commands.sh", col_names = FALSE)
 ```
 
