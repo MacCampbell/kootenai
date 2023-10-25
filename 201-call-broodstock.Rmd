@@ -304,3 +304,18 @@ ggsave("outputs/201/broodstock-loci-counts.jpeg")
 ```{r}
 calls2 %>% group_by(State) %>% summarize(TotalReads=sum(NReads)) %>% mutate(Diff=lag(TotalReads)-TotalReads) %>% mutate(Percent=Diff/TotalReads * 100)
 ```
+
+
+Call complete genos.
+
+```{r}
+parents %>% 
+  mutate(Command3=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", 
+                         " 201.6-genotype-input.csv ",
+         paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/201/",Sample,".complete"))%>% 
+  select(Command3) %>% write_tsv("201.7-broodstock-commands.sh", col_names = FALSE)
+```
+
+
+module load parallel
+srun -p high -t 2:00:00 --nodes=1 --mem=32GB parallel -j 12 < 201.7-broodstock-commands.sh     
