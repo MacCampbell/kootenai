@@ -79,7 +79,24 @@ load("outputs/201/reads.rda")
 combo<-reads %>% left_join(parents %>% select(Sample, Type), by=c("Sample"="Sample")) 
 combo %>% select(Sample, Type) %>% unique() %>% group_by(Type) %>% summarize(Count=n())
 ```
+Generate summary figure:
 
+```{r}
+fig<-combo %>% group_by(Locus, Genotype, Call) %>%  summarize(Count=n()) 
+fig %>% group_by(Call) %>% summarize(NCalls=sum(Count))
+```
+```{r}
+fig %>% filter(Call=="A2HOM") %>% filter(Count > (0.5*317) ) 
+fig %>% filter(Genotype=="0000") %>% filter(Count > (0.5*317) ) 
+```
+
+```{r}
+fig %>% filter(Call %in% c("Missing","A2HOM")) %>% group_by(Locus) %>% summarize(Sum=sum(Count)) %>% filter(Sum > 0.75*317)
+
+```
+154 A1 HOM 37 A2 HOM
+
+Atr_19666-61,G,T,ACATTCAGGGCATA,ACATTCATGGCATA,CAGGCCTCAAGCTCTTCTGT,0,0
 
 ```{r}
 genos<-combo %>% group_by(Locus, Genotype, Call) %>%  summarize(Count=n()) %>% arrange(-Count)
@@ -237,7 +254,7 @@ genotypes$Locus<-gsub("-\\d+$","",genotypes$Locus)
 ```{r}
 outcomes<-genotypes%>% group_by(Locus, State, Call) %>% summarize(Count=n()) %>% mutate(Total=sum(Count))
 outcomes$Call<-factor(outcomes$Call, levels=c("A1HOM","HET1","HET2","HET3","A2HOM"))
-ggplot(outcomes) + geom_col(aes(x=Locus, y=Count, fill=Call)) +
+ggplot(outcomes) + geom_col(aes(x=Locus, y=Count, fill=Call), width = 0.75) +
   facet_wrap(.~State, ncol=1) +
   theme_bw() +
   theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1)) +
@@ -271,7 +288,7 @@ ggplot(calls2) +
   scale_x_continuous(labels = calls2$Loci, breaks = calls2$NewX) +
   theme_bw() +
   theme(panel.grid = element_blank()) +
-  theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1)) +
+  theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1, size=6)) +
   theme(panel.grid = element_blank()) +
   ylab("Number of Reads\n") +
   xlab("\nLocus") +

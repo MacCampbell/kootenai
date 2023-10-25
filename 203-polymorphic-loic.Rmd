@@ -709,5 +709,31 @@ ggsave("outputs/203/broodstock-loci-counts-poly.jpeg")
 ```
 
 
-calls2 %>% group_by(State) %>% summarize(TotalReads=sum(NReads)) %>% mutate(Diff=lag(TotalReads)-TotalReads) %>% mutate(Percent=Diff/TotalReads * 100)
+
+## Loci with close variants
+
+```{r}
+gs<-read_tsv("outputs/200/snps-90-broodstock.geno", col_names=FALSE)
 ```
+
+```{r}
+g2<-gs %>% select(X1, X2) %>% group_by(X1) %>% mutate(Count=n()) %>% filter(Count > 1) %>% mutate(Diff=abs(X2-lag(X2)))
+g2 %>% filter(Diff < 10)
+```
+_X1_
+
+Atr_11864-68,T,C,ATATCGCTGACCAC,ATATCGCCGACCAC,GGTACCACCGCCAATATCGC,0,0
+
+tr_13706-54,A,T,GTGAGAGAAGACTA,GTGAGAGTAGACTA,AGGCTACTTGCATCTGCCAG,0,0
+> genos %>% filter(Locus=="Atr_13706-54")
+# A tibble: 6 × 4
+# Groups:   Locus, Genotype [6]
+  Locus        Genotype Call  Count
+  <chr>        <chr>    <chr> <int>
+1 Atr_13706-54 0000     NA      153
+2 Atr_13706-54 AATT     HET2     67
+3 Atr_13706-54 AAAT     HET1     43
+4 Atr_13706-54 ATTT     HET3     33
+5 Atr_13706-54 AAAA     A1HOM    12
+6 Atr_13706-54 TTTT     A2HOM     9
+
