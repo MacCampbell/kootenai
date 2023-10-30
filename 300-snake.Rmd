@@ -1,0 +1,67 @@
+---
+title: "300-snake"
+output: html_document
+date: "2023-10-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+Get Snake fish. 
+
+```{r}
+parents<-read_csv("meta/KTOI_broodstock.csv", col_names=c("Sample")) %>% mutate(Type=paste0("broodstock")) %>% unique()
+offspring<-read_csv("meta/KTOI-offspring.csv") %>% mutate(Type=paste0("offspring")) %>% unique()
+ktoi<-bind_rows(parents,offspring) 
+ktoi %>% group_by(Type) %>% summarize(Count=n())
+```
+
+Getting alignment stats
+
+```{r}
+stats<-read_csv("outputs/102/alignment-info.txt", col_names=c("SeqID","Reads","Coverage"))
+stats$Sample<-gsub("_S\\d+$","",stats$SeqID)
+```
+
+2434_2_1 ... 2434_2_5 are unmatched, have 
+24343_2_10_S1450,240592,632.734
+24343_2_6_S1418,243816,652.827
+24343_2_7_S1426,255442,684.319
+24343_2_8_S1434,327937,875.665
+24343_2_9_S1442,292162,781.07
+
+Proceeding
+```{r}
+full<-left_join(ktoi,stats) %>% na.omit()
+
+snake<-stats %>% filter(!Sample %in% full$Sample)
+```
+
+
+
+```{r}
+snake %>% 
+  mutate(Command1=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", 
+                         " 201.2-broodstock.csv ",
+         paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/300/",Sample,".edited"))%>% 
+  select(Command1) %>% write_tsv("300.1-snake-edited.sh", col_names = FALSE)
+
+snake %>% 
+  mutate(Command2=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", 
+                         " 201.3-org.csv ",
+         paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/300/",Sample,".original"))%>% 
+  select(Command2) %>% write_tsv("300.2-snake-original.sh", col_names = FALSE)
+```
+
+
+module load parallel    
+srun -p high -t 2:00:00 --nodes=1 --mem=32GB parallel -j 12 < 300.1-broodstock-commands.sh     
+srun -p high -t 2:00:00 --nodes=1 --mem=32GB parallel -j 12 < 300.2-broodstock-commands.sh     
+
+for f in *.edited; do echo $f; cat $f | tail -n +2 >> 201-combined.csv; done;
+for f in *.original; do echo $f; cat $f | tail -n +2 >> 201-org-combined.csv; done;

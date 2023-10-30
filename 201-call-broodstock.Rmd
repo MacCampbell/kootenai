@@ -311,7 +311,7 @@ Call complete genos.
 ```{r}
 parents %>% 
   mutate(Command3=paste0("perl ./data-processing-files/GTseq_Genotyper_v3_Tetra.pl", 
-                         " 201.6-genotype-input.csv ",
+                         " 201.6-genotyper-input.csv ",
          paste0("data/align/",SeqID,"_L002_R1_001.fastq"), " > ", "outputs/201/",Sample,".complete"))%>% 
   select(Command3) %>% write_tsv("201.7-broodstock-commands.sh", col_names = FALSE)
 ```
@@ -319,3 +319,28 @@ parents %>%
 
 module load parallel
 srun -p high -t 2:00:00 --nodes=1 --mem=32GB parallel -j 12 < 201.7-broodstock-commands.sh     
+
+in outputs/201
+for f in *.complete; do echo $f; cat $f | tail -n +2 >> 201-complete.csv; done;
+
+```{r}
+broods<-read_csv("201.2-broodstock.csv",col_names = FALSE)
+broods
+```
+```{r}
+complete<-read_csv("outputs/201/201-complete.csv",
+                col_names=c("Locus","G1","G2","X4","Genotype","Call","X7","X8","X9","X10","X11","X12","X13")) %>%
+  mutate(State="Complete")
+
+outs<-complete %>% group_by(Locus, State, Call) %>% summarize(Count=n()) %>% mutate(Total=sum(Count))
+outs$Call<-factor(outs$Call, levels=c("A1HOM","HET1","HET2","HET3","A2HOM"))
+ggplot(outs %>% filter(Locus %in% broods$X1)) + geom_col(aes(x=Locus, y=Count, fill=Call), width = 0.75) +
+  theme_bw() +
+  theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1)) +
+  theme(panel.grid = element_blank()) +
+  scale_fill_viridis_d(option="H", na.value = "grey") +
+  theme(axis.title = element_text(face="bold", size=14)) +
+  xlab("\nLocus") +
+  ylab("Count\n")
+
+```
