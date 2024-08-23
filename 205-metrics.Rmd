@@ -1,0 +1,90 @@
+---
+title: "205-metrics"
+output: html_document
+date: "2024-08-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+Can we generate metrics from *genos files?
+
+outputs/203 has .original and .edited files, moving these to outputs 205
+outputs/205/edited
+cp ../../203/*edited .
+for file in *.edited; do mv -- "$file" "${file%.edited}.genos"; done
+
+ouputs/205/original
+cp ../../203/*original .
+for file in *.original; do mv -- "$file" "${file%.original}.genos"; done
+
+
+Aviva notes:
+Next, run the compiling script. Make sure to run it FROM the file with the .genos files in it
+
+```{unix}
+srun -t 0:30:00 -c 4 --mem 5G ../scripts/GTseq_GenoCompile_v3_Tetra.pl
+```
+
+Next, make your summary figures to visualize basic data quality.
+
+```{unix}
+srun -t 00:30:00 -c 4 --mem 10G python3 ../scripts/GTseq_SummaryFigures_v3_Tetra.py
+```
+
+
+So I:
+~/kootenai/data-processing-files-aviva/GTseq_GenoCompile_v3_Tetra.pl > ../original.genos
+mv original.genos ./original/
+(base) maccamp@farm:~/kootenai/outputs/205/original$  ~/kootenai/data-processing-files-aviva/GTseq_SummaryFigures_v3_Tetra.py
+type the path to directory containing .genos files for library *use single quotes*
+Format= '/home/user/...'
+/home/maccamp/kootenai/outputs/205/original/
+type the library name *use single quotes*
+original
+
+
+ ~/kootenai/data-processing-files-aviva/GTseq_GenoCompile_v3_Tetra.pl > ../edited.genos
+ mv edited.genos ./edited/
+ 
+ ~/kootenai/data-processing-files-aviva/GTseq_SummaryFigures_v3_Tetra.py
+/home/maccamp/kootenai/outputs/205/edited/
+type the library name *use single quotes*
+edited
+
+From here you should be able to work with other programs like Polygene, Colony etc. using the ".genos" genotype files.
+
+
+raceback (most recent call last):
+  File "/home/maccamp/kootenai/data-processing-files-aviva/GTseq_SummaryFigures_v3_Tetra.py", line 211, in <module>
+    otreads = int(OTarr[1])/1000
+IndexError: list index out of range
+
+
+Using broodstock org from outputs/201 locally in outputs/205/broodstock
+
+for file in *.org; do mv -- "$file" "${file%.org}.genos"; done
+expect 317 broodstock
+
+Putting on farm, then
+~/kootenai/data-processing-files-aviva/GTseq_GenoCompile_v3_Tetra.pl > ../broodstock.genos
+mv broodstock.genos ./broodstock/
+
+(base) maccamp@farm:~/kootenai/outputs/205/broodstock$ ~/kootenai/data-processing-files-aviva/GTseq_SummaryFigures_v3_Tetra.py
+type the path to directory containing .genos files for library *use single quotes*
+Format= '/home/user/...'
+/home/maccamp/kootenai/outputs/205/broodstock/
+type the library name *use single quotes*
+broodstock 
+
+this takes long enough I should probably cue it 
+
+```{sh, eval=FALSE}
+srun -t 00:30:00 -c 4 --mem 10G python3 ~/kootenai/data-processing-files-aviva/GTseq_SummaryFigures_v3_Tetra.py
+
+```
